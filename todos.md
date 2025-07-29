@@ -1,11 +1,43 @@
 # Nebby Neighbor - Phase 1 Development Todos
 
+## PR Format
+
+**Short summary** - 1-2 sentence, imperative form
+
+**Guiding priorities** - required project context; short explanation about what aspects have already been in play and will likely guide subsequent choices
+
+**Acceptance criteria** - bullet-point set of todos. Highlight items as "interactive-pre" (architectural) or "interactive-post" (design choices). For design elements, we will likely want to make multiple versions; for infrastructural aspects, will want to check in so Will can carefully plan the big picture
+
+**Test steps** - comprehensive list (usually one per acceptance criterion), note that you will use the Playwright mcp for visual aspects such as clicking and image/pdf generation. Use lookahead to incorporate elements from future PRs when they provide clear efficiency gains.
+
 ## High Priority (Core Gameplay)
 
 - [ ] **Set up Vite + TypeScript project with basic HTML page**
-  - Initialize project structure
-  - Configure TypeScript and Vite
-  - Create basic HTML layout
+
+**Short summary** - Initialize Vite + TypeScript development environment with basic HTML foundation for mobile-first puzzle game.
+
+**Guiding priorities** - Mobile-first design (per PRD), TypeScript for maintainability (per PRD), Vite for fast iteration (per PRD), client-side architecture with no server dependency (per PRD). Project should support touch-friendly interactions and responsive design from the start.
+
+**Acceptance criteria**
+- Initialize npm project with appropriate package.json metadata
+- Install and configure Vite with TypeScript support
+- Set up TypeScript configuration with strict settings appropriate for game development
+- Create basic HTML page with mobile-responsive viewport and game-appropriate meta tags
+- **Interactive-pre**: Choose initial CSS architecture (vanilla CSS, CSS modules, or styling library)
+- **Interactive-pre**: Determine project directory structure (src/, public/, etc.)
+- Create minimal TypeScript entry point that successfully builds and runs
+- Configure development server to run locally
+- Include project header ("Nebby Neighbor"), subtitle ("In Pittsburgh, 'nebby' means 'nosy'"), and main instruction ("Place all neighbors so that no one is hidden from someone's view") in initial HTML (per PRD page design)
+
+**Test steps**
+- Verify npm project initializes with correct metadata
+- Confirm Vite development server starts without errors
+- Validate TypeScript compilation works with example code
+- Test HTML page loads correctly in browser with proper mobile viewport
+- Verify build process produces deployable dist/ output
+- Confirm development server supports hot reload for TypeScript changes
+- Test page displays correctly on mobile viewport sizes
+- Confirm project header, subtitle, and main instruction display correctly
 
 - [ ] **Display clickable n×n grid on screen (start with n=4)**
   - Render 4×4 grid with intersection points
