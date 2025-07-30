@@ -323,4 +323,32 @@ export class GridRenderer {
   getIsScrollable(): boolean {
     return this.isScrollable;
   }
+
+  updateForbiddenSquareStyle(styleConfig: any) {
+    // Update theme with new forbidden square styling
+    if (styleConfig.fillColor) {
+      this.theme = {
+        ...this.theme,
+        forbiddenSquareColor: styleConfig.fillColor,
+        forbiddenSquareOpacity: styleConfig.opacity || this.theme.forbiddenSquareOpacity
+      };
+    }
+
+    // Map pattern to our internal style names
+    if (styleConfig.pattern) {
+      const patternMap: Record<string, string> = {
+        'solid': 'subtle-overlay',
+        'dashed-grid': 'grid-fade', 
+        'diagonal-lines': 'cross-hatch'
+      };
+      const mappedStyle = patternMap[styleConfig.pattern] || styleConfig.pattern;
+      this.theme = {
+        ...this.theme,
+        forbiddenSquareStyle: mappedStyle as any
+      };
+    }
+
+    // Re-render with new style
+    this.render();
+  }
 }

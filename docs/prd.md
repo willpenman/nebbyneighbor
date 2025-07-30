@@ -215,3 +215,24 @@ Since players are relatively slow compared to computational requirements, we opt
 1. **Phase 1:** Basic gameplay with grids having known complete solution sets (n≤18)
 2. **Phase 2:** Add copycat mechanics (symmetry-based assistance) for all n (starting around n=5)
 3. **Phase 3:** Support for unsolved mathematical cases (n≥53) and larger symmetric solutions
+
+## Design (Ongoing)
+
+### Choices So Far
+
+**Issue #2 - Visual Theme Selection:** Adopted "Soft Organic" theme with warm earth tones (#faf7f2 background, #d4c4a8 grid lines, #8B7355 neighbors) over minimal and bold contrast alternatives for approachable, non-intimidating aesthetic.
+
+**Issue #4 - Pre-placed Neighbor Styling:** Selected "filled-outline" style for pre-placed neighbors, using semi-transparent fill with darker outline to clearly distinguish them from player-placed neighbors while maintaining visual cohesion.
+
+**Issue #6 - Constraint Visualization:** Chose "Grid Fade (Organic)" approach for forbidden squares, using faded background with dashed inner grid pattern at 50% opacity to provide clear constraint feedback without overwhelming the interface.
+
+### Design Testing
+
+**Compatibility Requirements - Critical Dependencies:**
+The issue-specific development system requires preserving URL parameter detection, dev overlay initialization patterns, and custom event contracts (`dev-theme-change`, `dev-reset-puzzle`) in main.ts. GridController and GridRenderer APIs (`getRenderer()`, `loadPuzzle()`, `updateForbiddenSquareStyle()`) must remain public for dev mode functionality.
+
+**System Extensibility:**
+The current dev system supports static styling, real-time theme switching, puzzle configuration, and debug information. It's easily extensible for animations & interactions (click animations, transitions), behavioral changes (auto-solve hints, undo limits), and UI layout experiments (control positioning, grid layouts). Main constraint is canvas-based rendering compatibility and event-driven architecture.
+
+**Development Workflow:**
+Each issue preserves design choices as testable configurations in `docs/development/issue-N/config.js` rather than separate implementations. The branching tree approach allows walking back through design decisions while maintaining a single evolving production codebase. Access via `http://localhost:3000/src/dev/index-N.html` or `http://localhost:3000?issue=N`.
