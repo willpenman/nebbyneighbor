@@ -40,26 +40,47 @@ export class GridRenderer {
   
   private calculateDimensions() {
     const rect = this.canvas.getBoundingClientRect();
-    const minDimension = Math.min(rect.width, rect.height);
-    const padding = 40;
-    const availableSpace = minDimension - (padding * 2);
+    // Use reasonable padding - small on mobile, larger on desktop
+    const padding = rect.width < 500 ? 10 : 40;
+    const availableWidth = rect.width - (padding * 2);
+    const availableHeight = rect.height - (padding * 2);
+    // Use minimum dimension to ensure grid fits completely in viewport
+    const availableSpace = Math.min(availableWidth, availableHeight);
     
     // Calculate ideal cell size
     const idealCellSize = availableSpace / this.gridState.size;
     
-    // Check if we need scrolling for touch accessibility
-    if (idealCellSize < GridRenderer.MIN_CELL_SIZE) {
+    console.log(`Canvas: ${rect.width}×${rect.height}, Available: ${availableSpace}px, Ideal cell: ${idealCellSize}px`);
+    
+    // For small grids, use the full available space to maximize cell size
+    if (this.gridState.size <= 4) {
+      this.cellSize = idealCellSize; // Use maximum possible size that fits
+      this.isScrollable = false;
+      console.log(`Grid ${this.gridState.size}×${this.gridState.size} fits normally: cellSize=${this.cellSize}px`);
+    } else if (idealCellSize < GridRenderer.MIN_CELL_SIZE) {
+      // Only use scrolling for larger grids that actually need it
       this.cellSize = GridRenderer.MIN_CELL_SIZE;
       this.isScrollable = true;
       console.log(`Grid ${this.gridState.size}×${this.gridState.size} requires scrolling: cellSize=${this.cellSize}px`);
     } else {
       this.cellSize = idealCellSize;
       this.isScrollable = false;
+      console.log(`Grid ${this.gridState.size}×${this.gridState.size} fits normally: cellSize=${this.cellSize}px`);
     }
     
-    // Center the grid (for scrollable grids, this shows the top-left portion)
-    this.gridOffset.x = (rect.width - (this.cellSize * this.gridState.size)) / 2;
-    this.gridOffset.y = (rect.height - (this.cellSize * this.gridState.size)) / 2;
+    // Center the grid, but ensure it fits within viewport for scrollable grids
+    const totalGridWidth = this.cellSize * this.gridState.size;
+    const totalGridHeight = this.cellSize * this.gridState.size;
+    
+    if (this.isScrollable) {
+      // For scrollable grids, position at top with minimal padding, center horizontally
+      this.gridOffset.x = Math.max(20, (rect.width - totalGridWidth) / 2);
+      this.gridOffset.y = 20; // Always position at top for scrollable grids
+    } else {
+      // For non-scrollable grids, center normally
+      this.gridOffset.x = (rect.width - totalGridWidth) / 2;
+      this.gridOffset.y = (rect.height - totalGridHeight) / 2;
+    }
   }
   
   render() {

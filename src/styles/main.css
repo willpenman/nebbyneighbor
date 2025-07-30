@@ -81,8 +81,17 @@ header h1 {
     padding: 0.5rem;
   }
   
+  header {
+    margin-bottom: 1rem;
+  }
+  
   header h1 {
     font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .subtitle {
+    margin-bottom: 0.5rem;
   }
   
   .instruction {
@@ -90,7 +99,8 @@ header h1 {
   }
   
   #game-container {
-    padding: 1rem;
-    min-height: 300px;
+    padding: 0.5rem;
+    height: 70vh; /* Force specific height on mobile */
+    flex: none;
   }
 }
