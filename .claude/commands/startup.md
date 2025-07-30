@@ -1,0 +1,1 @@
+Please consult the prd file to get oriented to the project. Examine the recent (lengthy) commit messages to see what we've been up to. 

@@ -1,0 +1,33 @@
+{
+  "name": "nebbyneighbor",
+  "version": "1.0.0",
+  "description": "Nebby Neighbor - A puzzle game based on the no-three-in-line mathematical problem",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/willpenman/nebbyneighbor.git"
+  },
+  "keywords": [
+    "puzzle",
+    "game",
+    "mathematics",
+    "typescript",
+    "vite"
+  ],
+  "author": "Will",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/willpenman/nebbyneighbor/issues"
+  },
+  "homepage": "https://github.com/willpenman/nebbyneighbor#readme",
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.6"
+  }
+}
