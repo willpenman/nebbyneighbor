@@ -88,6 +88,7 @@ export class GridRenderer {
   }
   
   private drawNeighbors() {
+    // Draw player-placed neighbors
     this.ctx.fillStyle = this.theme.neighborColor;
     
     for (const neighborKey of this.gridState.neighbors) {
@@ -96,15 +97,64 @@ export class GridRenderer {
       const centerY = this.gridOffset.y + (row * this.cellSize) + (this.cellSize / 2);
       const radius = Math.min(this.cellSize * this.theme.neighborRadius, 25);
       
-      if (this.theme.neighborStyle === 'circle') {
-        this.ctx.beginPath();
-        this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      this.drawNeighborShape(centerX, centerY, radius, this.theme.neighborStyle, false);
+    }
+    
+    // Draw pre-placed neighbors with distinct styling
+    for (const neighborKey of this.gridState.prePlacedNeighbors) {
+      const [row, col] = neighborKey.split(',').map(Number);
+      const centerX = this.gridOffset.x + (col * this.cellSize) + (this.cellSize / 2);
+      const centerY = this.gridOffset.y + (row * this.cellSize) + (this.cellSize / 2);
+      const radius = Math.min(this.cellSize * this.theme.neighborRadius, 25);
+      
+      this.drawNeighborShape(centerX, centerY, radius, this.theme.neighborStyle, true);
+    }
+  }
+  
+  private drawNeighborShape(centerX: number, centerY: number, radius: number, shape: 'circle' | 'rounded-square', isPrePlaced: boolean) {
+    const color = isPrePlaced ? this.theme.prePlacedNeighborColor : this.theme.neighborColor;
+    const styleType = isPrePlaced ? this.theme.prePlacedNeighborStyle : 'solid';
+    
+    if (shape === 'circle') {
+      this.ctx.beginPath();
+      this.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      
+      if (styleType === 'solid') {
+        this.ctx.fillStyle = color;
         this.ctx.fill();
-      } else if (this.theme.neighborStyle === 'rounded-square') {
-        const size = radius * 1.4;
-        const cornerRadius = size * 0.2;
-        this.drawRoundedRect(centerX - size/2, centerY - size/2, size, size, cornerRadius);
+      } else if (styleType === 'outline') {
+        this.ctx.strokeStyle = color;
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+      } else if (styleType === 'filled-outline') {
+        // Fill with lighter version of color
+        this.ctx.fillStyle = color + '40'; // Add transparency
         this.ctx.fill();
+        // Add darker outline
+        this.ctx.strokeStyle = color;
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+      }
+    } else if (shape === 'rounded-square') {
+      const size = radius * 1.4;
+      const cornerRadius = size * 0.2;
+      this.drawRoundedRect(centerX - size/2, centerY - size/2, size, size, cornerRadius);
+      
+      if (styleType === 'solid') {
+        this.ctx.fillStyle = color;
+        this.ctx.fill();
+      } else if (styleType === 'outline') {
+        this.ctx.strokeStyle = color;
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
+      } else if (styleType === 'filled-outline') {
+        // Fill with lighter version of color
+        this.ctx.fillStyle = color + '40'; // Add transparency
+        this.ctx.fill();
+        // Add darker outline
+        this.ctx.strokeStyle = color;
+        this.ctx.lineWidth = 2;
+        this.ctx.stroke();
       }
     }
   }

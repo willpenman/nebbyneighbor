@@ -1,11 +1,13 @@
 import { GridState, GridPosition, positionToKey, createGridState } from '../types/grid.js';
 import { GridRenderer } from '../ui/GridRenderer.js';
+import { PuzzleConfig, PuzzleState } from '../types/puzzle.js';
 
 export class GridController {
   private gridState: GridState;
   private renderer: GridRenderer;
   private canvas: HTMLCanvasElement;
   private inspectingPosition: GridPosition | null = null;
+  private puzzleState: PuzzleState | null = null;
   
   constructor(canvas: HTMLCanvasElement, size: number = 4, theme: string = 'minimal') {
     this.gridState = createGridState(size);
@@ -31,6 +33,11 @@ export class GridController {
     if (!position) return;
     
     const key = positionToKey(position);
+    const isPrePlaced = this.gridState.prePlacedNeighbors.has(key);
+    
+    // Don't allow interaction with pre-placed neighbors
+    if (isPrePlaced) return;
+    
     const hasNeighbor = this.gridState.neighbors.has(key);
     const isInspecting = this.inspectingPosition && 
       positionToKey(this.inspectingPosition) === key;
@@ -74,7 +81,11 @@ export class GridController {
   }
   
   getGridState(): GridState {
-    return { ...this.gridState, neighbors: new Set(this.gridState.neighbors) };
+    return { 
+      ...this.gridState, 
+      neighbors: new Set(this.gridState.neighbors),
+      prePlacedNeighbors: new Set(this.gridState.prePlacedNeighbors)
+    };
   }
   
   setGridState(newState: GridState) {
@@ -85,8 +96,34 @@ export class GridController {
   
   clearGrid() {
     this.gridState.neighbors.clear();
+    // Don't clear pre-placed neighbors
     this.clearInspectMode();
     this.render();
+  }
+  
+  loadPuzzle(puzzleConfig: PuzzleConfig) {
+    // Create new grid state with puzzle data
+    this.gridState = createGridState(puzzleConfig.size);
+    
+    // Set pre-placed neighbors
+    for (const position of puzzleConfig.prePlacedNeighbors) {
+      const key = positionToKey(position);
+      this.gridState.prePlacedNeighbors.add(key);
+    }
+    
+    // Initialize puzzle state
+    this.puzzleState = {
+      config: puzzleConfig,
+      playerPlacedNeighbors: new Set(),
+      isComplete: false
+    };
+    
+    this.clearInspectMode();
+    this.render();
+  }
+  
+  getPuzzleState(): PuzzleState | null {
+    return this.puzzleState;
   }
   
   setTheme(themeName: string) {

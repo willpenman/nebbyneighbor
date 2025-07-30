@@ -6,6 +6,7 @@ export type GridPosition = {
 export type GridState = {
   size: number;
   neighbors: Set<string>;
+  prePlacedNeighbors: Set<string>;
 };
 
 export type GridCell = {
@@ -27,5 +28,6 @@ export function createGridState(size: number): GridState {
   return {
     size,
     neighbors: new Set(),
+    prePlacedNeighbors: new Set(),
   };
 }

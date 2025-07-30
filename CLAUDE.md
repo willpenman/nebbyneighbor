@@ -12,3 +12,6 @@ We plan to use the Playwright MCP for web actions including visual testing, clic
 - `npm run dev` - Start development server at http://localhost:3000
 - `npm run build` - Build for production (outputs to dist/)
 - `npm run preview` - Preview production build locally
+
+**Project structure:**
+- `docs/development/` - Development artifacts, screenshots, and issue documentation

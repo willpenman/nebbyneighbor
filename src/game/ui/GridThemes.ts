@@ -6,6 +6,8 @@ export interface GridTheme {
   neighborRadius: number;
   backgroundColor?: string;
   neighborStyle: 'circle' | 'rounded-square';
+  prePlacedNeighborColor: string;
+  prePlacedNeighborStyle: 'solid' | 'outline' | 'filled-outline';
 }
 
 export const themes: Record<string, GridTheme> = {
@@ -15,7 +17,9 @@ export const themes: Record<string, GridTheme> = {
     gridLineWidth: 1,
     neighborColor: '#3498db',
     neighborRadius: 0.25,
-    neighborStyle: 'circle'
+    neighborStyle: 'circle',
+    prePlacedNeighborColor: '#2c3e50',
+    prePlacedNeighborStyle: 'solid'
   },
   
   bold: {
@@ -24,7 +28,9 @@ export const themes: Record<string, GridTheme> = {
     gridLineWidth: 2,
     neighborColor: '#e74c3c',
     neighborRadius: 0.35,
-    neighborStyle: 'rounded-square'
+    neighborStyle: 'rounded-square',
+    prePlacedNeighborColor: '#8e44ad',
+    prePlacedNeighborStyle: 'outline'
   },
   
   organic: {
@@ -34,6 +40,8 @@ export const themes: Record<string, GridTheme> = {
     neighborColor: '#27ae60',
     neighborRadius: 0.3,
     backgroundColor: '#fefefe',
-    neighborStyle: 'circle'
+    neighborStyle: 'circle',
+    prePlacedNeighborColor: '#8B4513',
+    prePlacedNeighborStyle: 'filled-outline'
   }
 };

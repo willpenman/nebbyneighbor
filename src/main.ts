@@ -1,4 +1,5 @@
 import { GridController } from './game/engine/GridController.js';
+import { getDefaultPuzzle } from './game/data/puzzleCatalog.js';
 
 console.log('Nebby Neighbor game initializing...');
 
@@ -14,8 +15,10 @@ if (gameContainer) {
   gameContainer.appendChild(canvas);
   
   try {
-    new GridController(canvas, 4, 'organic');
-    console.log('Grid controller initialized successfully');
+    const controller = new GridController(canvas, 4, 'organic');
+    const defaultPuzzle = getDefaultPuzzle();
+    controller.loadPuzzle(defaultPuzzle);
+    console.log('Grid controller initialized with puzzle:', defaultPuzzle.id);
   } catch (error) {
     console.error('Failed to initialize grid controller:', error);
     gameContainer.innerHTML = `
