@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue #2: Visual Theme Comparison Test</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 20px;
+            background: #f8f9fa;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin: 30px 0;
+        }
+        .theme-container {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            background: #fff;
+        }
+        .theme-container.selected {
+            border-color: #28a745;
+            box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
+        }
+        canvas {
+            display: block;
+            margin: 15px auto;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        .theme-details {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .test-controls {
+            text-align: center;
+            margin: 15px 0;
+        }
+        button {
+            margin: 5px;
+            padding: 8px 15px;
+            border: 1px solid #007bff;
+            background: #007bff;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .selected-badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .interactive-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #e7f3ff;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Issue #2: Visual Theme Comparison</h1>
+        <p>Three different visual approaches were explored for the basic grid display during Issue #2 development. Click on grids to place neighbors and see how each theme renders them.</p>
+
+        <div class="theme-grid">
+            <!-- Clean Minimal Theme -->
+            <div class="theme-container" id="minimal-container">
+                <h3>1. Clean Minimal Theme</h3>
+                <canvas id="canvas-minimal" width="300" height="300"></canvas>
+                <div class="theme-details">
+                    gridLineColor: '#e0e0e0'<br>
+                    gridLineWidth: 1<br>
+                    neighborColor: '#3498db'<br>
+                    neighborRadius: 0.25<br>
+                    neighborStyle: 'circle'
+                </div>
+                <div class="test-controls">
+                    <button onclick="clearGrid('minimal')">Clear</button>
+                    <button onclick="addTestNeighbors('minimal')">Add Test Neighbors</button>
+                </div>
+                <p><strong>Characteristics:</strong> Professional, subtle gray lines, blue circles, clean aesthetic</p>
+            </div>
+
+            <!-- Bold Geometric Theme -->
+            <div class="theme-container" id="bold-container">
+                <h3>2. Bold Geometric Theme</h3>
+                <canvas id="canvas-bold" width="300" height="300"></canvas>
+                <div class="theme-details">
+                    gridLineColor: '#34495e'<br>
+                    gridLineWidth: 2<br>
+                    neighborColor: '#e74c3c'<br>
+                    neighborRadius: 0.35<br>
+                    neighborStyle: 'rounded-square'
+                </div>
+                <div class="test-controls">
+                    <button onclick="clearGrid('bold')">Clear</button>
+                    <button onclick="addTestNeighbors('bold')">Add Test Neighbors</button>
+                </div>
+                <p><strong>Characteristics:</strong> High contrast, thick dark lines, red rounded squares, geometric styling</p>
+            </div>
+
+            <!-- Soft Organic Theme (Selected) -->
+            <div class="theme-container selected" id="organic-container">
+                <h3>3. Soft Organic Theme <span class="selected-badge">SELECTED</span></h3>
+                <canvas id="canvas-organic" width="300" height="300"></canvas>
+                <div class="theme-details">
+                    gridLineColor: '#d4b59a'<br>
+                    gridLineWidth: 1.5<br>
+                    neighborColor: '#27ae60'<br>
+                    neighborRadius: 0.3<br>
+                    backgroundColor: '#fefefe'<br>
+                    neighborStyle: 'circle'
+                </div>
+                <div class="test-controls">
+                    <button onclick="clearGrid('organic')">Clear</button>
+                    <button onclick="addTestNeighbors('organic')">Add Test Neighbors</button>
+                </div>
+                <p><strong>Characteristics:</strong> Warm brown lines, green circles, cream background, organic aesthetic</p>
+            </div>
+        </div>
+
+        <div class="interactive-section">
+            <h3>Interactive Testing</h3>
+            <p>Click on any grid cell to place/remove neighbors and see how each theme renders them. Use the controls below to test all themes simultaneously:</p>
+            <div class="test-controls">
+                <button onclick="clearAllGrids()">Clear All Grids</button>
+                <button onclick="addTestNeighborsAll()">Add Test Pattern to All</button>
+                <button onclick="randomPattern()">Random Pattern</button>
+            </div>
+        </div>
+
+        <div class="interactive-section">
+            <h3>Decision Rationale</h3>
+            <p>The <strong>Soft Organic</strong> theme was selected as the default for several reasons:</p>
+            <ul>
+                <li><strong>Accessibility:</strong> Warm brown lines provide sufficient contrast without being harsh</li>
+                <li><strong>Visual Hierarchy:</strong> Green neighbors stand out clearly against the warm grid</li>
+                <li><strong>Aesthetic Appeal:</strong> Organic, friendly appearance aligns with neighborhood theme</li>
+                <li><strong>Extensibility:</strong> Color palette works well with constraint visualization (added in Issue #6)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Inline theme definitions for self-contained testing
+        const themeDefinitions = {
+            minimal: {
+                name: 'Clean Minimal',
+                gridLineColor: '#e0e0e0',
+                gridLineWidth: 1,
+                neighborColor: '#3498db',
+                neighborRadius: 0.25,
+                neighborStyle: 'circle'
+            },
+            bold: {
+                name: 'Bold Geometric', 
+                gridLineColor: '#34495e',
+                gridLineWidth: 2,
+                neighborColor: '#e74c3c',
+                neighborRadius: 0.35,
+                neighborStyle: 'rounded-square'
+            },
+            organic: {
+                name: 'Soft Organic',
+                gridLineColor: '#d4b59a',
+                gridLineWidth: 1.5,
+                neighborColor: '#27ae60',
+                neighborRadius: 0.3,
+                backgroundColor: '#fefefe',
+                neighborStyle: 'circle'
+            }
+        };
+
+        // Simple grid renderer for demo purposes
+        class ThemeTestRenderer {
+            constructor(canvas, theme) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.theme = theme;
+                this.size = 4;
+                this.neighbors = new Set();
+                this.cellSize = canvas.width / this.size;
+                
+                this.render();
+                this.setupClickHandler();
+            }
+
+            render() {
+                const ctx = this.ctx;
+                const cellSize = this.cellSize;
+                
+                // Clear canvas with background
+                if (this.theme.backgroundColor) {
+                    ctx.fillStyle = this.theme.backgroundColor;
+                    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                } else {
+                    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                }
+                
+                // Draw grid lines
+                ctx.strokeStyle = this.theme.gridLineColor;
+                ctx.lineWidth = this.theme.gridLineWidth;
+                ctx.beginPath();
+                
+                // Vertical lines
+                for (let i = 0; i <= this.size; i++) {
+                    const x = i * cellSize;
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, this.canvas.height);
+                }
+                
+                // Horizontal lines
+                for (let i = 0; i <= this.size; i++) {
+                    const y = i * cellSize;
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(this.canvas.width, y);
+                }
+                
+                ctx.stroke();
+                
+                // Draw neighbors
+                this.neighbors.forEach(pos => {
+                    const [row, col] = pos.split(',').map(Number);
+                    this.drawNeighbor(row, col);
+                });
+            }
+
+            drawNeighbor(row, col) {
+                const ctx = this.ctx;
+                const centerX = (col + 0.5) * this.cellSize;
+                const centerY = (row + 0.5) * this.cellSize;
+                const radius = this.cellSize * this.theme.neighborRadius;
+                
+                ctx.fillStyle = this.theme.neighborColor;
+                
+                if (this.theme.neighborStyle === 'circle') {
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                    ctx.fill();
+                } else if (this.theme.neighborStyle === 'rounded-square') {
+                    const size = radius * 2;
+                    const cornerRadius = radius * 0.3;
+                    ctx.beginPath();
+                    ctx.roundRect(centerX - radius, centerY - radius, size, size, cornerRadius);
+                    ctx.fill();
+                }
+            }
+
+            setupClickHandler() {
+                this.canvas.addEventListener('click', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    const col = Math.floor(x / this.cellSize);
+                    const row = Math.floor(y / this.cellSize);
+                    
+                    if (col >= 0 && col < this.size && row >= 0 && row < this.size) {
+                        const pos = `${row},${col}`;
+                        if (this.neighbors.has(pos)) {
+                            this.neighbors.delete(pos);
+                        } else {
+                            this.neighbors.add(pos);
+                        }
+                        this.render();
+                    }
+                });
+            }
+
+            clear() {
+                this.neighbors.clear();
+                this.render();
+            }
+
+            addTestNeighbors() {
+                this.neighbors.clear();
+                this.neighbors.add('1,1');
+                this.neighbors.add('1,2');
+                this.neighbors.add('2,1');
+                this.render();
+            }
+        }
+
+        // Initialize renderers
+        const renderers = {};
+        
+        function initializeThemes() {
+            Object.keys(themeDefinitions).forEach(themeKey => {
+                const canvas = document.getElementById(`canvas-${themeKey}`);
+                renderers[themeKey] = new ThemeTestRenderer(canvas, themeDefinitions[themeKey]);
+            });
+        }
+
+        // Control functions
+        window.clearGrid = (themeKey) => {
+            renderers[themeKey].clear();
+        };
+
+        window.addTestNeighbors = (themeKey) => {
+            renderers[themeKey].addTestNeighbors();
+        };
+
+        window.clearAllGrids = () => {
+            Object.values(renderers).forEach(renderer => renderer.clear());
+        };
+
+        window.addTestNeighborsAll = () => {
+            Object.values(renderers).forEach(renderer => renderer.addTestNeighbors());
+        };
+
+        window.randomPattern = () => {
+            Object.values(renderers).forEach(renderer => {
+                renderer.clear();
+                // Add 3-5 random neighbors
+                const count = 3 + Math.floor(Math.random() * 3);
+                for (let i = 0; i < count; i++) {
+                    const row = Math.floor(Math.random() * 4);
+                    const col = Math.floor(Math.random() * 4);
+                    renderer.neighbors.add(`${row},${col}`);
+                }
+                renderer.render();
+            });
+        };
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeThemes);
+    </script>
+</body>
+</html>

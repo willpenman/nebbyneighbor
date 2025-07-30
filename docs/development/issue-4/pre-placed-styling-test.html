@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue #4: Pre-Placed Neighbor Styling Test</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 20px;
+            background: #f8f9fa;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .styling-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin: 30px 0;
+        }
+        .styling-container {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            background: #fff;
+        }
+        .styling-container.selected {
+            border-color: #28a745;
+            box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
+        }
+        canvas {
+            display: block;
+            margin: 15px auto;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        .styling-details {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .legend {
+            display: flex;
+            justify-content: space-around;
+            margin: 15px 0;
+            padding: 10px;
+            background: #f1f3f4;
+            border-radius: 4px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-circle {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+        .legend-square {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+        }
+        .test-controls {
+            text-align: center;
+            margin: 15px 0;
+        }
+        button {
+            margin: 5px;
+            padding: 8px 15px;
+            border: 1px solid #007bff;
+            background: #007bff;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .selected-badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .interactive-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #e7f3ff;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Issue #4: Pre-Placed Neighbor Styling Variants</h1>
+        <p>Three different approaches were explored for visually distinguishing pre-placed neighbors (given in the puzzle) from player-placed neighbors (placed by clicking). Each grid shows a sample puzzle with 2 pre-placed neighbors.</p>
+
+        <div class="styling-grid">
+            <!-- Minimal Approach -->
+            <div class="styling-container" id="minimal-container">
+                <h3>1. Minimal Theme Approach</h3>
+                <canvas id="canvas-minimal" width="300" height="300"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-circle" style="background: #2c3e50;"></div>
+                        <span>Pre-placed (Dark Gray Solid)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-circle" style="background: #3498db;"></div>
+                        <span>Player-placed (Blue Solid)</span>
+                    </div>
+                </div>
+                <div class="styling-details">
+                    prePlacedNeighborColor: '#2c3e50'<br>
+                    prePlacedNeighborStyle: 'solid'<br>
+                    neighborColor: '#3498db'<br>
+                    neighborStyle: 'circle'
+                </div>
+                <div class="test-controls">
+                    <button onclick="loadPuzzle('minimal')">Load Test Puzzle</button>
+                    <button onclick="clearPlayerNeighbors('minimal')">Clear Player Neighbors</button>
+                </div>
+                <p><strong>Effect:</strong> Clean, professional look with color-based distinction</p>
+            </div>
+
+            <!-- Bold Approach -->
+            <div class="styling-container" id="bold-container">
+                <h3>2. Bold Theme Approach</h3>
+                <canvas id="canvas-bold" width="300" height="300"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-square" style="border: 2px solid #8e44ad; background: transparent;"></div>
+                        <span>Pre-placed (Purple Outline)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-square" style="background: #e74c3c;"></div>
+                        <span>Player-placed (Red Solid)</span>
+                    </div>
+                </div>
+                <div class="styling-details">
+                    prePlacedNeighborColor: '#8e44ad'<br>
+                    prePlacedNeighborStyle: 'outline'<br>
+                    neighborColor: '#e74c3c'<br>
+                    neighborStyle: 'rounded-square'
+                </div>
+                <div class="test-controls">
+                    <button onclick="loadPuzzle('bold')">Load Test Puzzle</button>
+                    <button onclick="clearPlayerNeighbors('bold')">Clear Player Neighbors</button>
+                </div>
+                <p><strong>Effect:</strong> High contrast, geometric styling with shape + fill distinction</p>
+            </div>
+
+            <!-- Organic Approach (Selected) -->
+            <div class="styling-container selected" id="organic-container">
+                <h3>3. Organic Theme Approach <span class="selected-badge">SELECTED</span></h3>
+                <canvas id="canvas-organic" width="300" height="300"></canvas>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-circle" style="background: #d2b48c; border: 2px solid #8B4513;"></div>
+                        <span>Pre-placed (Brown Filled-Outline)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-circle" style="background: #27ae60;"></div>
+                        <span>Player-placed (Green Solid)</span>
+                    </div>
+                </div>
+                <div class="styling-details">
+                    prePlacedNeighborColor: '#8B4513'<br>
+                    prePlacedNeighborStyle: 'filled-outline'<br>
+                    neighborColor: '#27ae60'<br>
+                    neighborStyle: 'circle'
+                </div>
+                <div class="test-controls">
+                    <button onclick="loadPuzzle('organic')">Load Test Puzzle</button>
+                    <button onclick="clearPlayerNeighbors('organic')">Clear Player Neighbors</button>
+                </div>
+                <p><strong>Effect:</strong> Subtle, warm aesthetic with clear but non-intrusive distinction</p>
+            </div>
+        </div>
+
+        <div class="interactive-section">
+            <h3>Interactive Testing</h3>
+            <p>Use the "Load Test Puzzle" buttons to see each styling approach with pre-placed neighbors. Click on empty grid cells to place player neighbors and observe the distinction. Pre-placed neighbors cannot be removed by clicking.</p>
+            <div class="test-controls">
+                <button onclick="loadAllPuzzles()">Load All Puzzles</button>
+                <button onclick="clearAllPlayerNeighbors()">Clear All Player Neighbors</button>
+                <button onclick="showFullySolved()">Show Fully Solved State</button>
+            </div>
+        </div>
+
+        <div class="interactive-section">
+            <h3>Selection Rationale</h3>
+            <p>The <strong>Organic filled-outline approach</strong> was selected because:</p>
+            <ul>
+                <li><strong>Visual Hierarchy:</strong> Pre-placed neighbors appear foundational (earthy brown) while player neighbors are active (vibrant green)</li>
+                <li><strong>Accessibility:</strong> The filled-outline style provides strong contrast without being harsh</li>
+                <li><strong>Intuitive Understanding:</strong> Light fill suggests "given" or "foundation" while solid colors suggest "active choice"</li>
+                <li><strong>Theme Consistency:</strong> Colors work harmoniously with the organic theme's warm brown grid lines</li>
+                <li><strong>Extensibility:</strong> The color palette works well with constraint visualization added in Issue #6</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Inline styling definitions for self-contained testing
+        const stylingDefinitions = {
+            minimal: {
+                gridLineColor: '#e0e0e0',
+                gridLineWidth: 1,
+                neighborColor: '#3498db',
+                neighborRadius: 0.25,
+                neighborStyle: 'circle',
+                prePlacedNeighborColor: '#2c3e50',
+                prePlacedNeighborStyle: 'solid'
+            },
+            bold: {
+                gridLineColor: '#34495e',
+                gridLineWidth: 2,
+                neighborColor: '#e74c3c',
+                neighborRadius: 0.35,
+                neighborStyle: 'rounded-square',
+                prePlacedNeighborColor: '#8e44ad',
+                prePlacedNeighborStyle: 'outline'
+            },
+            organic: {
+                gridLineColor: '#d4b59a',
+                gridLineWidth: 1.5,
+                neighborColor: '#27ae60',
+                neighborRadius: 0.3,
+                backgroundColor: '#fefefe',
+                neighborStyle: 'circle',
+                prePlacedNeighborColor: '#8B4513',
+                prePlacedNeighborStyle: 'filled-outline'
+            }
+        };
+
+        // Test puzzle configuration (4x4-001 from puzzle catalog)
+        const testPuzzle = {
+            prePlacedNeighbors: [
+                { row: 0, col: 0 },
+                { row: 0, col: 1 }
+            ]
+        };
+
+        // Simple puzzle renderer for demo purposes
+        class PrePlacedTestRenderer {
+            constructor(canvas, styling) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.styling = styling;
+                this.size = 4;
+                this.prePlacedNeighbors = new Set();
+                this.playerNeighbors = new Set();
+                this.cellSize = canvas.width / this.size;
+                
+                this.render();
+                this.setupClickHandler();
+            }
+
+            render() {
+                const ctx = this.ctx;
+                const cellSize = this.cellSize;
+                
+                // Clear canvas with background
+                if (this.styling.backgroundColor) {
+                    ctx.fillStyle = this.styling.backgroundColor;
+                    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                } else {
+                    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                }
+                
+                // Draw grid lines
+                ctx.strokeStyle = this.styling.gridLineColor;
+                ctx.lineWidth = this.styling.gridLineWidth;
+                ctx.beginPath();
+                
+                // Vertical lines
+                for (let i = 0; i <= this.size; i++) {
+                    const x = i * cellSize;
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, this.canvas.height);
+                }
+                
+                // Horizontal lines
+                for (let i = 0; i <= this.size; i++) {
+                    const y = i * cellSize;
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(0, y);
+                    ctx.lineTo(this.canvas.width, y);
+                }
+                
+                ctx.stroke();
+                
+                // Draw pre-placed neighbors first
+                this.prePlacedNeighbors.forEach(pos => {
+                    const [row, col] = pos.split(',').map(Number);
+                    this.drawPrePlacedNeighbor(row, col);
+                });
+                
+                // Draw player neighbors
+                this.playerNeighbors.forEach(pos => {
+                    const [row, col] = pos.split(',').map(Number);
+                    this.drawPlayerNeighbor(row, col);
+                });
+            }
+
+            drawPrePlacedNeighbor(row, col) {
+                const ctx = this.ctx;
+                const centerX = (col + 0.5) * this.cellSize;
+                const centerY = (row + 0.5) * this.cellSize;
+                const radius = this.cellSize * this.styling.neighborRadius;
+                
+                if (this.styling.prePlacedNeighborStyle === 'solid') {
+                    ctx.fillStyle = this.styling.prePlacedNeighborColor;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                    ctx.fill();
+                } else if (this.styling.prePlacedNeighborStyle === 'outline') {
+                    ctx.strokeStyle = this.styling.prePlacedNeighborColor;
+                    ctx.lineWidth = 2;
+                    if (this.styling.neighborStyle === 'rounded-square') {
+                        const size = radius * 2;
+                        const cornerRadius = radius * 0.3;
+                        ctx.beginPath();
+                        ctx.roundRect(centerX - radius, centerY - radius, size, size, cornerRadius);
+                        ctx.stroke();
+                    } else {
+                        ctx.beginPath();
+                        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                        ctx.stroke();
+                    }
+                } else if (this.styling.prePlacedNeighborStyle === 'filled-outline') {
+                    // Fill with lighter version of the color
+                    const fillColor = this.lightenColor(this.styling.prePlacedNeighborColor, 0.6);
+                    ctx.fillStyle = fillColor;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // Outline with full color
+                    ctx.strokeStyle = this.styling.prePlacedNeighborColor;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                    ctx.stroke();
+                }
+            }
+
+            drawPlayerNeighbor(row, col) {
+                const ctx = this.ctx;
+                const centerX = (col + 0.5) * this.cellSize;
+                const centerY = (row + 0.5) * this.cellSize;
+                const radius = this.cellSize * this.styling.neighborRadius;
+                
+                ctx.fillStyle = this.styling.neighborColor;
+                
+                if (this.styling.neighborStyle === 'circle') {
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+                    ctx.fill();
+                } else if (this.styling.neighborStyle === 'rounded-square') {
+                    const size = radius * 2;
+                    const cornerRadius = radius * 0.3;
+                    ctx.beginPath();
+                    ctx.roundRect(centerX - radius, centerY - radius, size, size, cornerRadius);
+                    ctx.fill();
+                }
+            }
+
+            lightenColor(color, amount) {
+                // Simple color lightening function
+                const hex = color.replace('#', '');
+                const r = parseInt(hex.substr(0, 2), 16);
+                const g = parseInt(hex.substr(2, 2), 16);
+                const b = parseInt(hex.substr(4, 2), 16);
+                
+                const newR = Math.min(255, Math.floor(r + (255 - r) * amount));
+                const newG = Math.min(255, Math.floor(g + (255 - g) * amount));
+                const newB = Math.min(255, Math.floor(b + (255 - b) * amount));
+                
+                return `rgb(${newR}, ${newG}, ${newB})`;
+            }
+
+            setupClickHandler() {
+                this.canvas.addEventListener('click', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    const col = Math.floor(x / this.cellSize);
+                    const row = Math.floor(y / this.cellSize);
+                    
+                    if (col >= 0 && col < this.size && row >= 0 && row < this.size) {
+                        const pos = `${row},${col}`;
+                        
+                        // Don't allow clicking on pre-placed neighbors
+                        if (this.prePlacedNeighbors.has(pos)) {
+                            return;
+                        }
+                        
+                        if (this.playerNeighbors.has(pos)) {
+                            this.playerNeighbors.delete(pos);
+                        } else {
+                            this.playerNeighbors.add(pos);
+                        }
+                        this.render();
+                    }
+                });
+            }
+
+            loadPuzzle() {
+                this.prePlacedNeighbors.clear();
+                testPuzzle.prePlacedNeighbors.forEach(pos => {
+                    this.prePlacedNeighbors.add(`${pos.row},${pos.col}`);
+                });
+                this.render();
+            }
+
+            clearPlayerNeighbors() {
+                this.playerNeighbors.clear();
+                this.render();
+            }
+
+            showFullySolved() {
+                // Show a complete 4x4 solution (one of the known solutions)
+                this.playerNeighbors.clear();
+                this.playerNeighbors.add('1,3');
+                this.playerNeighbors.add('2,0');
+                this.playerNeighbors.add('2,2');
+                this.playerNeighbors.add('3,1');
+                this.render();
+            }
+        }
+
+        // Initialize renderers
+        const renderers = {};
+        
+        function initializeStylings() {
+            Object.keys(stylingDefinitions).forEach(styleKey => {
+                const canvas = document.getElementById(`canvas-${styleKey}`);
+                renderers[styleKey] = new PrePlacedTestRenderer(canvas, stylingDefinitions[styleKey]);
+            });
+        }
+
+        // Control functions
+        window.loadPuzzle = (styleKey) => {
+            renderers[styleKey].loadPuzzle();
+        };
+
+        window.clearPlayerNeighbors = (styleKey) => {
+            renderers[styleKey].clearPlayerNeighbors();
+        };
+
+        window.loadAllPuzzles = () => {
+            Object.values(renderers).forEach(renderer => renderer.loadPuzzle());
+        };
+
+        window.clearAllPlayerNeighbors = () => {
+            Object.values(renderers).forEach(renderer => renderer.clearPlayerNeighbors());
+        };
+
+        window.showFullySolved = () => {
+            Object.values(renderers).forEach(renderer => renderer.showFullySolved());
+        };
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeStylings);
+    </script>
+</body>
+</html>

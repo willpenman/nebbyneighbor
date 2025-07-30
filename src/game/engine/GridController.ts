@@ -11,10 +11,10 @@ export class GridController {
   private puzzleState: PuzzleState | null = null;
   private lineDetector: LineDetector;
   
-  constructor(canvas: HTMLCanvasElement, size: number = 4, theme: string = 'minimal') {
+  constructor(canvas: HTMLCanvasElement, size: number = 4) {
     this.gridState = createGridState(size);
     this.canvas = canvas;
-    this.renderer = new GridRenderer(canvas, this.gridState, theme);
+    this.renderer = new GridRenderer(canvas, this.gridState);
     this.lineDetector = new LineDetector(size);
     
     this.setupEventListeners();
@@ -146,8 +146,9 @@ export class GridController {
     return this.puzzleState;
   }
   
-  setTheme(themeName: string) {
-    this.renderer.setTheme(themeName);
+  setTheme() {
+    // Theme is now fixed - this method kept for backwards compatibility
+    this.renderer.setTheme();
   }
   
   getRenderer(): GridRenderer {

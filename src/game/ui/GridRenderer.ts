@@ -1,5 +1,5 @@
 import { GridState, GridPosition } from '../types/grid.js';
-import { GridTheme, themes } from './GridThemes.js';
+import { GridTheme, gridTheme } from './GridThemes.js';
 
 export class GridRenderer {
   private canvas: HTMLCanvasElement;
@@ -7,14 +7,14 @@ export class GridRenderer {
   private gridState: GridState;
   private cellSize: number = 0;
   private gridOffset: { x: number; y: number } = { x: 0, y: 0 };
-  private theme: GridTheme = themes.minimal;
+  private theme: GridTheme = gridTheme;
   private static readonly MIN_CELL_SIZE = 55; // 44x44px touch targets (22px radius ÷ 0.4)
   private isScrollable: boolean = false;
   
-  constructor(canvas: HTMLCanvasElement, gridState: GridState, themeName: string = 'minimal') {
+  constructor(canvas: HTMLCanvasElement, gridState: GridState) {
     this.canvas = canvas;
     this.gridState = gridState;
-    this.theme = themes[themeName] || themes.minimal;
+    this.theme = gridTheme;
     
     const ctx = canvas.getContext('2d');
     if (!ctx) {
@@ -310,8 +310,9 @@ export class GridRenderer {
     this.render();
   }
   
-  setTheme(themeName: string) {
-    this.theme = themes[themeName] || themes.minimal;
+  setTheme() {
+    // Theme is now fixed - this method kept for backwards compatibility
+    this.theme = gridTheme;
     this.render();
   }
   

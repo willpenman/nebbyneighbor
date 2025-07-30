@@ -15,7 +15,7 @@ if (gameContainer) {
   
   try {
     // Default to 8x8 grid for better constraint visualization testing
-    const controller = new GridController(canvas, 8, 'organic');
+    const controller = new GridController(canvas, 8);
     
     // Create test puzzle with the specified neighbors
     const testPuzzle = {
@@ -26,7 +26,9 @@ if (gameContainer) {
         { row: 3, col: 4 },
         { row: 4, col: 3 }
       ],
-      symmetryClass: 'none' as const
+      metadata: {
+        symmetryClass: 'iden' as const
+      }
     };
     
     controller.loadPuzzle(testPuzzle);
