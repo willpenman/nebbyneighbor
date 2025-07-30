@@ -1,1 +1,1 @@
-Please consult the prd file to get oriented to the project. Examine the recent (lengthy) commit messages to see what we've been up to. 
+Please consult the prd file to get oriented to the project and its goals. Examine the recent (lengthy) commit messages to see what we've been up to. In the docs/development directory, view 1-2 screenshots of the recent state of the project from the most recent issue.

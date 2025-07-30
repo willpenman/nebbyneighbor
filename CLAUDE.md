@@ -6,6 +6,8 @@ This project uses `gh` CLI for GitHub operations and repository management.
 
 We plan to use the Playwright MCP for web actions including visual testing, clicking interactions, and screenshot/PDF generation during development and testing phases.
 
+For mobile testing, use `npm run dev -- --host` to expose the development server to the local network. The server is configured with `allowedHosts: ['wills-macbook-pro-6.local']` for Will's phone access.
+
 ## For Will
 
 **Development commands:**

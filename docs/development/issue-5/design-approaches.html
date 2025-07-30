@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid Size Selection Design Approaches</title>
+    <link rel="stylesheet" href="../../../src/styles/main.css">
+    <style>
+        .design-section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+        }
+        .design-title {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+        
+        /* Approach 1: Inline Selector */
+        .inline-selector {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+        .size-chip {
+            padding: 0.4rem 0.8rem;
+            border: 2px solid #bdc3c7;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .size-chip:hover { border-color: #3498db; }
+        .size-chip.active { background: #3498db; color: white; border-color: #3498db; }
+        .size-chip.scrollable { border-style: dashed; }
+        .size-chip.scrollable::after { content: "📱"; margin-left: 0.3rem; }
+        
+        /* Approach 2: Dropdown Selector */
+        .dropdown-selector {
+            position: relative;
+            display: inline-block;
+            margin: 1rem 0;
+        }
+        .dropdown-btn {
+            padding: 0.8rem 1.5rem;
+            border: 2px solid #3498db;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .dropdown-content {
+            position: absolute;
+            background: white;
+            border: 2px solid #3498db;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 200px;
+            top: 100%;
+            left: 0;
+        }
+        .dropdown-item {
+            padding: 0.8rem 1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .dropdown-item:hover { background: #f8f9fa; }
+        .dropdown-item.scrollable { font-style: italic; color: #6c757d; }
+        
+        /* Approach 3: Segmented Control */
+        .segmented-control {
+            display: inline-flex;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        .segment {
+            padding: 0.8rem 1.2rem;
+            background: white;
+            border: none;
+            cursor: pointer;
+            border-right: 1px solid #3498db;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .segment:last-child { border-right: none; }
+        .segment:hover { background: #ecf0f1; }
+        .segment.active { background: #3498db; color: white; }
+        .segment.scrollable { background: #f39c12; color: white; }
+        .segment.scrollable.active { background: #e67e22; }
+        
+        .mini-grid {
+            width: 100%;
+            max-width: 300px;
+            height: 200px;
+            margin: 1rem auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Grid Size Selection Design</h1>
+            <p class="subtitle">Three approaches for UI integration</p>
+        </header>
+
+        <main>
+            <div class="design-section">
+                <h2 class="design-title">Approach 1: Inline Chip Selector</h2>
+                <p><strong>Best for:</strong> Quick switching, visual feedback about scrolling</p>
+                
+                <div class="inline-selector">
+                    <span class="size-chip active">4×4</span>
+                    <span class="size-chip">5×5</span>
+                    <span class="size-chip">6×6</span>
+                    <span class="size-chip">7×7</span>
+                    <span class="size-chip">8×8</span>
+                    <span class="size-chip scrollable">9×9</span>
+                    <span class="size-chip scrollable">10×10</span>
+                </div>
+                
+                <div class="mini-grid" id="grid1"></div>
+                
+                <p><strong>Pros:</strong> Immediate visual feedback, shows scrollable grids with 📱 indicator</p>
+                <p><strong>Cons:</strong> Takes horizontal space, may wrap on mobile</p>
+            </div>
+
+            <div class="design-section">
+                <h2 class="design-title">Approach 2: Dropdown Selector</h2>
+                <p><strong>Best for:</strong> Compact UI, future scalability to larger grids</p>
+                
+                <div class="dropdown-selector">
+                    <div class="dropdown-btn">
+                        Grid Size: 4×4 ▼
+                    </div>
+                    <div class="dropdown-content">
+                        <div class="dropdown-item"><span>4×4 Grid</span> <span>✓</span></div>
+                        <div class="dropdown-item">5×5 Grid</div>
+                        <div class="dropdown-item">6×6 Grid</div>
+                        <div class="dropdown-item">7×7 Grid</div>
+                        <div class="dropdown-item">8×8 Grid</div>
+                        <div class="dropdown-item scrollable"><span>9×9 Grid</span> <span>📱</span></div>
+                        <div class="dropdown-item scrollable"><span>10×10 Grid</span> <span>📱</span></div>
+                    </div>
+                </div>
+                
+                <div class="mini-grid" id="grid2"></div>
+                
+                <p><strong>Pros:</strong> Compact, scales to many sizes, clear mobile indicators</p>
+                <p><strong>Cons:</strong> Requires click to see options, less immediate</p>
+            </div>
+
+            <div class="design-section">
+                <h2 class="design-title">Approach 3: Segmented Range Control</h2>
+                <p><strong>Best for:</strong> Clear visual progression, accessibility</p>
+                
+                <div class="segmented-control">
+                    <button class="segment active">4×4</button>
+                    <button class="segment">5×5</button> 
+                    <button class="segment">6×6</button>
+                    <button class="segment">7×7</button>
+                    <button class="segment">8×8</button>
+                    <button class="segment scrollable">9×9</button>
+                    <button class="segment scrollable">10×10</button>
+                </div>
+                
+                <div class="mini-grid" id="grid3"></div>
+                
+                <p><strong>Pros:</strong> Native feel, clear progression, color coding for mobile</p>
+                <p><strong>Cons:</strong> Fixed width, less flexible than other approaches</p>
+            </div>
+
+            <div class="design-section">
+                <h2 class="design-title">Recommendation: Hybrid Approach</h2>
+                <p>Use <strong>Approach 1 (Inline Chips)</strong> for initial Phase 1 implementation with n≤10, then transition to <strong>Approach 2 (Dropdown)</strong> when supporting larger grids in Phase 3.</p>
+                
+                <p><strong>Rationale:</strong></p>
+                <ul>
+                    <li>Chips provide immediate visual feedback about mobile scrolling behavior</li>
+                    <li>Perfect for the limited range of n=4-10 in current scope</li>
+                    <li>Easy to implement and integrate with existing header design</li>
+                    <li>Natural upgrade path to dropdown when grid count grows significantly</li>
+                </ul>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { GridController } from '../../../src/game/engine/GridController.js';
+
+        // Demo grid controllers for each approach
+        const grids = ['grid1', 'grid2', 'grid3'];
+        
+        grids.forEach(gridId => {
+            const canvas = document.createElement('canvas');
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            document.getElementById(gridId).appendChild(canvas);
+            
+            try {
+                const controller = new GridController(canvas, 4, 'organic');
+                const puzzle = {
+                    id: 'demo-4x4',
+                    size: 4,
+                    prePlacedNeighbors: [{ row: 0, col: 0 }, { row: 1, col: 2 }],
+                    metadata: { symmetryClass: 'iden' }
+                };
+                controller.loadPuzzle(puzzle);
+            } catch (error) {
+                console.error(`Failed to create demo grid for ${gridId}:`, error);
+            }
+        });
+    </script>
+</body>
+</html>

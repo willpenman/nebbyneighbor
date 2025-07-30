@@ -8,6 +8,8 @@ export class GridRenderer {
   private cellSize: number = 0;
   private gridOffset: { x: number; y: number } = { x: 0, y: 0 };
   private theme: GridTheme = themes.minimal;
+  private static readonly MIN_CELL_SIZE = 55; // 44x44px touch targets (22px radius ÷ 0.4)
+  private isScrollable: boolean = false;
   
   constructor(canvas: HTMLCanvasElement, gridState: GridState, themeName: string = 'minimal') {
     this.canvas = canvas;
@@ -42,8 +44,20 @@ export class GridRenderer {
     const padding = 40;
     const availableSpace = minDimension - (padding * 2);
     
-    this.cellSize = availableSpace / this.gridState.size;
+    // Calculate ideal cell size
+    const idealCellSize = availableSpace / this.gridState.size;
     
+    // Check if we need scrolling for touch accessibility
+    if (idealCellSize < GridRenderer.MIN_CELL_SIZE) {
+      this.cellSize = GridRenderer.MIN_CELL_SIZE;
+      this.isScrollable = true;
+      console.log(`Grid ${this.gridState.size}×${this.gridState.size} requires scrolling: cellSize=${this.cellSize}px`);
+    } else {
+      this.cellSize = idealCellSize;
+      this.isScrollable = false;
+    }
+    
+    // Center the grid (for scrollable grids, this shows the top-left portion)
     this.gridOffset.x = (rect.width - (this.cellSize * this.gridState.size)) / 2;
     this.gridOffset.y = (rect.height - (this.cellSize * this.gridState.size)) / 2;
   }
@@ -198,5 +212,13 @@ export class GridRenderer {
   setTheme(themeName: string) {
     this.theme = themes[themeName] || themes.minimal;
     this.render();
+  }
+  
+  getCellSize(): number {
+    return this.cellSize;
+  }
+  
+  getIsScrollable(): boolean {
+    return this.isScrollable;
   }
 }

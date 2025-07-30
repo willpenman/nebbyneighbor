@@ -129,4 +129,8 @@ export class GridController {
   setTheme(themeName: string) {
     this.renderer.setTheme(themeName);
   }
+  
+  getRenderer(): GridRenderer {
+    return this.renderer;
+  }
 }

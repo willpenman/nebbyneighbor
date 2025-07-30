@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grid Size Testing - Issue #5</title>
+    <link rel="stylesheet" href="../../../src/styles/main.css">
+    <style>
+        .test-controls {
+            margin: 1rem 0;
+            text-align: center;
+        }
+        .grid-size-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+        .grid-size-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid #3498db;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .grid-size-btn:hover {
+            background: #3498db;
+            color: white;
+        }
+        .grid-size-btn.active {
+            background: #2c3e50;
+            color: white;
+            border-color: #2c3e50;
+        }
+        .info-panel {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>Grid Size Testing</h1>
+            <p class="subtitle">Issue #5: Support for n=4 through n=10</p>
+            <p class="instruction">Test different grid sizes and touch interaction</p>
+        </header>
+
+        <div class="test-controls">
+            <div class="grid-size-buttons">
+                <button class="grid-size-btn" data-size="4">4×4</button>
+                <button class="grid-size-btn" data-size="5">5×5</button>
+                <button class="grid-size-btn" data-size="6">6×6</button>
+                <button class="grid-size-btn" data-size="7">7×7</button>
+                <button class="grid-size-btn" data-size="8">8×8</button>
+                <button class="grid-size-btn" data-size="9">9×9</button>
+                <button class="grid-size-btn active" data-size="10">10×10</button>
+            </div>
+            
+            <div class="info-panel" id="grid-info">
+                Current: 10×10 | Cell Size: -- | Touch Target: -- | Scrollable: --
+            </div>
+        </div>
+
+        <main id="game-container">
+            <canvas id="game-canvas" role="application" aria-label="Grid puzzle - click cells to place neighbors"></canvas>
+        </main>
+    </div>
+
+    <script type="module">
+        import { GridController } from '../../../src/game/engine/GridController.js';
+
+        let currentController = null;
+        let currentSize = 10;
+
+        function updateGridInfo(size, cellSize, isScrollable) {
+            const touchTarget = Math.round(cellSize * 0.4 * 2); // diameter
+            const info = document.getElementById('grid-info');
+            info.textContent = `Current: ${size}×${size} | Cell Size: ${cellSize}px | Touch Target: ${touchTarget}px | Scrollable: ${isScrollable ? 'YES' : 'NO'}`;
+        }
+
+        function createGrid(size) {
+            const canvas = document.getElementById('game-canvas');
+            
+            if (currentController) {
+                // Clean up existing controller if needed
+            }
+            
+            try {
+                currentController = new GridController(canvas, size, 'organic');
+                
+                const testPuzzle = {
+                    id: `${size}x${size}-test`,
+                    size: size,
+                    prePlacedNeighbors: [
+                        { row: 0, col: 0 },
+                        { row: 1, col: Math.min(2, size - 1) }
+                    ],
+                    metadata: { symmetryClass: 'iden' }
+                };
+                
+                currentController.loadPuzzle(testPuzzle);
+                console.log(`Created ${size}×${size} grid`);
+                
+                // Get info from renderer (we'll need to expose this)
+                setTimeout(() => {
+                    const renderer = currentController.renderer;
+                    if (renderer && renderer.cellSize) {
+                        updateGridInfo(size, renderer.cellSize, renderer.isScrollable);
+                    }
+                }, 100);
+                
+            } catch (error) {
+                console.error(`Failed to create ${size}×${size} grid:`, error);
+            }
+        }
+
+        // Set up button handlers
+        document.querySelectorAll('.grid-size-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const size = parseInt(e.target.dataset.size);
+                
+                // Update active button
+                document.querySelectorAll('.grid-size-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                // Create new grid
+                currentSize = size;
+                createGrid(size);
+            });
+        });
+
+        // Initialize with 10×10
+        createGrid(10);
+    </script>
+</body>
+</html>

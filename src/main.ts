@@ -15,6 +15,7 @@ if (gameContainer) {
   gameContainer.appendChild(canvas);
   
   try {
+    // Grid system now supports n=4 through n=10 with automatic mobile scrolling
     const controller = new GridController(canvas, 4, 'organic');
     const defaultPuzzle = getDefaultPuzzle();
     controller.loadPuzzle(defaultPuzzle);
