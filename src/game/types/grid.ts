@@ -7,6 +7,7 @@ export type GridState = {
   size: number;
   neighbors: Set<string>;
   prePlacedNeighbors: Set<string>;
+  forbiddenSquares: Set<string>;
 };
 
 export type GridCell = {
@@ -29,5 +30,6 @@ export function createGridState(size: number): GridState {
     size,
     neighbors: new Set(),
     prePlacedNeighbors: new Set(),
+    forbiddenSquares: new Set(),
   };
 }

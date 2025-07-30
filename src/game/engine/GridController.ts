@@ -1,6 +1,7 @@
 import { GridState, GridPosition, positionToKey, createGridState } from '../types/grid.js';
 import { GridRenderer } from '../ui/GridRenderer.js';
 import { PuzzleConfig, PuzzleState } from '../types/puzzle.js';
+import { LineDetector } from './LineDetector.js';
 
 export class GridController {
   private gridState: GridState;
@@ -8,11 +9,13 @@ export class GridController {
   private canvas: HTMLCanvasElement;
   private inspectingPosition: GridPosition | null = null;
   private puzzleState: PuzzleState | null = null;
+  private lineDetector: LineDetector;
   
   constructor(canvas: HTMLCanvasElement, size: number = 4, theme: string = 'minimal') {
     this.gridState = createGridState(size);
     this.canvas = canvas;
     this.renderer = new GridRenderer(canvas, this.gridState, theme);
+    this.lineDetector = new LineDetector(size);
     
     this.setupEventListeners();
     this.render();
@@ -56,6 +59,7 @@ export class GridController {
   private placeNeighbor(position: GridPosition) {
     const key = positionToKey(position);
     this.gridState.neighbors.add(key);
+    this.updateForbiddenSquares();
     this.clearInspectMode();
     this.render();
   }
@@ -63,6 +67,7 @@ export class GridController {
   private removeNeighbor(position: GridPosition) {
     const key = positionToKey(position);
     this.gridState.neighbors.delete(key);
+    this.updateForbiddenSquares();
     this.clearInspectMode();
     this.render();
   }
@@ -75,6 +80,16 @@ export class GridController {
   private clearInspectMode() {
     this.inspectingPosition = null;
   }
+
+  private updateForbiddenSquares() {
+    // Combine pre-placed and player-placed neighbors for constraint calculation
+    const allNeighbors = new Set([
+      ...this.gridState.neighbors,
+      ...this.gridState.prePlacedNeighbors
+    ]);
+    
+    this.gridState.forbiddenSquares = this.lineDetector.calculateForbiddenSquares(allNeighbors);
+  }
   
   private render() {
     this.renderer.updateGridState(this.gridState);
@@ -84,12 +99,14 @@ export class GridController {
     return { 
       ...this.gridState, 
       neighbors: new Set(this.gridState.neighbors),
-      prePlacedNeighbors: new Set(this.gridState.prePlacedNeighbors)
+      prePlacedNeighbors: new Set(this.gridState.prePlacedNeighbors),
+      forbiddenSquares: new Set(this.gridState.forbiddenSquares)
     };
   }
   
   setGridState(newState: GridState) {
     this.gridState = newState;
+    this.updateForbiddenSquares();
     this.clearInspectMode();
     this.render();
   }
@@ -97,6 +114,7 @@ export class GridController {
   clearGrid() {
     this.gridState.neighbors.clear();
     // Don't clear pre-placed neighbors
+    this.updateForbiddenSquares();
     this.clearInspectMode();
     this.render();
   }
@@ -104,6 +122,7 @@ export class GridController {
   loadPuzzle(puzzleConfig: PuzzleConfig) {
     // Create new grid state with puzzle data
     this.gridState = createGridState(puzzleConfig.size);
+    this.lineDetector = new LineDetector(puzzleConfig.size);
     
     // Set pre-placed neighbors
     for (const position of puzzleConfig.prePlacedNeighbors) {
@@ -118,6 +137,7 @@ export class GridController {
       isComplete: false
     };
     
+    this.updateForbiddenSquares();
     this.clearInspectMode();
     this.render();
   }

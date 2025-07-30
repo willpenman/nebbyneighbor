@@ -1,5 +1,4 @@
 import { GridController } from './game/engine/GridController.js';
-import { getDefaultPuzzle } from './game/data/puzzleCatalog.js';
 
 console.log('Nebby Neighbor game initializing...');
 
@@ -9,17 +8,29 @@ if (gameContainer) {
   const canvas = document.createElement('canvas');
   canvas.id = 'game-canvas';
   canvas.setAttribute('role', 'application');
-  canvas.setAttribute('aria-label', '4x4 grid puzzle - click cells to place neighbors');
+  canvas.setAttribute('aria-label', '8x8 grid puzzle - click cells to place neighbors');
   
   gameContainer.innerHTML = '';
   gameContainer.appendChild(canvas);
   
   try {
-    // Grid system now supports n=4 through n=10 with automatic mobile scrolling
-    const controller = new GridController(canvas, 4, 'organic');
-    const defaultPuzzle = getDefaultPuzzle();
-    controller.loadPuzzle(defaultPuzzle);
-    console.log('Grid controller initialized with puzzle:', defaultPuzzle.id);
+    // Default to 8x8 grid for better constraint visualization testing
+    const controller = new GridController(canvas, 8, 'organic');
+    
+    // Create test puzzle with the specified neighbors
+    const testPuzzle = {
+      id: '8x8-test',
+      size: 8,
+      prePlacedNeighbors: [
+        { row: 7, col: 1 },
+        { row: 3, col: 4 },
+        { row: 4, col: 3 }
+      ],
+      symmetryClass: 'none' as const
+    };
+    
+    controller.loadPuzzle(testPuzzle);
+    console.log('Grid controller initialized with puzzle:', testPuzzle.id);
   } catch (error) {
     console.error('Failed to initialize grid controller:', error);
     gameContainer.innerHTML = `

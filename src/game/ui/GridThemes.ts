@@ -8,6 +8,10 @@ export interface GridTheme {
   neighborStyle: 'circle' | 'rounded-square';
   prePlacedNeighborColor: string;
   prePlacedNeighborStyle: 'solid' | 'outline' | 'filled-outline';
+  // Forbidden square styling
+  forbiddenSquareStyle: 'subtle-overlay' | 'grid-fade' | 'cross-hatch';
+  forbiddenSquareColor: string;
+  forbiddenSquareOpacity: number;
 }
 
 export const themes: Record<string, GridTheme> = {
@@ -19,7 +23,10 @@ export const themes: Record<string, GridTheme> = {
     neighborRadius: 0.25,
     neighborStyle: 'circle',
     prePlacedNeighborColor: '#2c3e50',
-    prePlacedNeighborStyle: 'solid'
+    prePlacedNeighborStyle: 'solid',
+    forbiddenSquareStyle: 'subtle-overlay',
+    forbiddenSquareColor: '#bdc3c7',
+    forbiddenSquareOpacity: 0.4
   },
   
   bold: {
@@ -30,7 +37,10 @@ export const themes: Record<string, GridTheme> = {
     neighborRadius: 0.35,
     neighborStyle: 'rounded-square',
     prePlacedNeighborColor: '#8e44ad',
-    prePlacedNeighborStyle: 'outline'
+    prePlacedNeighborStyle: 'outline',
+    forbiddenSquareStyle: 'cross-hatch',
+    forbiddenSquareColor: '#95a5a6',
+    forbiddenSquareOpacity: 0.6
   },
   
   organic: {
@@ -42,6 +52,9 @@ export const themes: Record<string, GridTheme> = {
     backgroundColor: '#fefefe',
     neighborStyle: 'circle',
     prePlacedNeighborColor: '#8B4513',
-    prePlacedNeighborStyle: 'filled-outline'
+    prePlacedNeighborStyle: 'filled-outline',
+    forbiddenSquareStyle: 'grid-fade',
+    forbiddenSquareColor: '#e8d5c3',
+    forbiddenSquareOpacity: 0.5
   }
 };

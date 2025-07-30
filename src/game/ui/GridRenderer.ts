@@ -87,6 +87,7 @@ export class GridRenderer {
     this.clear();
     this.drawBackground();
     this.drawGrid();
+    this.drawForbiddenSquares();
     this.drawNeighbors();
   }
   
@@ -120,6 +121,85 @@ export class GridRenderer {
       this.ctx.lineTo(this.gridOffset.x + gridSize, this.gridOffset.y + pos);
       this.ctx.stroke();
     }
+  }
+
+  private drawForbiddenSquares() {
+    if (!this.gridState.forbiddenSquares || this.gridState.forbiddenSquares.size === 0) {
+      return;
+    }
+
+    const style = this.theme.forbiddenSquareStyle;
+    const color = this.theme.forbiddenSquareColor;
+    const opacity = this.theme.forbiddenSquareOpacity;
+
+    for (const squareKey of this.gridState.forbiddenSquares) {
+      const [row, col] = squareKey.split(',').map(Number);
+      const x = this.gridOffset.x + (col * this.cellSize);
+      const y = this.gridOffset.y + (row * this.cellSize);
+
+      this.ctx.save();
+      this.ctx.globalAlpha = opacity;
+
+      switch (style) {
+        case 'subtle-overlay':
+          this.drawSubtleOverlay(x, y, color);
+          break;
+        case 'grid-fade':
+          this.drawGridFade(x, y, color);
+          break;
+        case 'cross-hatch':
+          this.drawCrossHatch(x, y, color);
+          break;
+      }
+
+      this.ctx.restore();
+    }
+  }
+
+  private drawSubtleOverlay(x: number, y: number, color: string) {
+    this.ctx.fillStyle = color;
+    this.ctx.fillRect(x, y, this.cellSize, this.cellSize);
+  }
+
+  private drawGridFade(x: number, y: number, color: string) {
+    // Draw faded square background
+    this.ctx.fillStyle = color;
+    this.ctx.fillRect(x + 1, y + 1, this.cellSize - 2, this.cellSize - 2);
+    
+    // Draw faded grid lines within the square
+    this.ctx.strokeStyle = color;
+    this.ctx.lineWidth = 1;
+    this.ctx.setLineDash([2, 2]);
+    
+    // Draw inner grid pattern
+    this.ctx.beginPath();
+    this.ctx.moveTo(x + this.cellSize / 2, y);
+    this.ctx.lineTo(x + this.cellSize / 2, y + this.cellSize);
+    this.ctx.moveTo(x, y + this.cellSize / 2);
+    this.ctx.lineTo(x + this.cellSize, y + this.cellSize / 2);
+    this.ctx.stroke();
+    
+    this.ctx.setLineDash([]);
+  }
+
+  private drawCrossHatch(x: number, y: number, color: string) {
+    this.ctx.strokeStyle = color;
+    this.ctx.lineWidth = 1.5;
+    
+    const spacing = this.cellSize / 6;
+    
+    this.ctx.beginPath();
+    // Diagonal lines from top-left to bottom-right
+    for (let i = 0; i < this.cellSize; i += spacing) {
+      this.ctx.moveTo(x + i, y);
+      this.ctx.lineTo(x + i + this.cellSize, y + this.cellSize);
+    }
+    // Diagonal lines from top-right to bottom-left  
+    for (let i = 0; i < this.cellSize; i += spacing) {
+      this.ctx.moveTo(x + this.cellSize - i, y);
+      this.ctx.lineTo(x - i, y + this.cellSize);
+    }
+    this.ctx.stroke();
   }
   
   private drawNeighbors() {

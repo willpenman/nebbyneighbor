@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue #6: Line Detection & Constraint Visualization Test</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 20px;
+            background: #f8f9fa;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+        }
+        .test-grid {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .grid-container {
+            flex: 1;
+            min-width: 300px;
+        }
+        canvas {
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        .theme-selector {
+            margin: 10px 0;
+        }
+        .test-controls {
+            margin: 15px 0;
+        }
+        button {
+            margin: 5px;
+            padding: 8px 15px;
+            border: 1px solid #007bff;
+            background: #007bff;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .info-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .test-scenario {
+            background: #e7f3ff;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Issue #6: Line Detection & Constraint Visualization</h1>
+        <p>Testing real-time line detection algorithm for three-in-line violations with visual highlighting of forbidden squares.</p>
+
+        <div class="test-section">
+            <h2>Test Scenario 1: Basic Horizontal/Vertical Lines</h2>
+            <div class="test-scenario">
+                <strong>Expected:</strong> Place 2 neighbors horizontally → all other horizontal squares grayed out<br>
+                <strong>Test:</strong> Click to place neighbors at (0,0) and (0,1), then observe constraint visualization
+            </div>
+            <div class="test-grid">
+                <div class="grid-container">
+                    <h3>4×4 Grid - Organic Theme (Grid Fade)</h3>
+                    <div class="theme-selector">
+                        <select id="theme1">
+                            <option value="organic">Organic (Grid Fade)</option>
+                            <option value="minimal">Minimal (Subtle Overlay)</option>
+                            <option value="bold">Bold (Cross Hatch)</option>
+                        </select>
+                    </div>
+                    <canvas id="canvas1" width="300" height="300"></canvas>
+                    <div class="test-controls">
+                        <button onclick="clearGrid1()">Clear Grid</button>
+                        <button onclick="testHorizontal()">Test Horizontal</button>
+                        <button onclick="testVertical()">Test Vertical</button>
+                    </div>
+                    <div id="info1" class="info-panel">
+                        Neighbors: 0 | Forbidden squares: 0
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Scenario 2: Diagonal Lines</h2>
+            <div class="test-scenario">
+                <strong>Expected:</strong> Place 2 neighbors diagonally → all diagonal squares grayed out<br>
+                <strong>Test:</strong> Click to place neighbors at (0,0) and (1,1), observe diagonal constraint
+            </div>
+            <div class="test-grid">
+                <div class="grid-container">
+                    <h3>4×4 Grid - All Visual Styles</h3>
+                    <canvas id="canvas2" width="300" height="300"></canvas>
+                    <div class="test-controls">
+                        <button onclick="clearGrid2()">Clear Grid</button>
+                        <button onclick="testDiagonal()">Test Main Diagonal</button>
+                        <button onclick="testAntiDiagonal()">Test Anti-Diagonal</button>
+                    </div>
+                    <div id="info2" class="info-panel">
+                        Neighbors: 0 | Forbidden squares: 0
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Scenario 3: Arbitrary Slopes (n=10 Grid)</h2>
+            <div class="test-scenario">
+                <strong>Expected:</strong> Complex slopes like 2:1, 3:2 ratios work correctly<br>
+                <strong>Test:</strong> Place neighbors with non-standard slopes and verify constraint calculation
+            </div>
+            <div class="test-grid">
+                <div class="grid-container">
+                    <h3>10×10 Grid - Complex Slopes</h3>
+                    <canvas id="canvas3" width="400" height="400"></canvas>
+                    <div class="test-controls">
+                        <button onclick="clearGrid3()">Clear Grid</button>
+                        <button onclick="testSlope2to1()">Test 2:1 Slope</button>
+                        <button onclick="testSlope3to2()">Test 3:2 Slope</button>
+                    </div>
+                    <div id="info3" class="info-panel">
+                        Neighbors: 0 | Forbidden squares: 0
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Scenario 4: Pre-placed Neighbors Integration</h2>
+            <div class="test-scenario">
+                <strong>Expected:</strong> Pre-placed neighbors participate in constraint calculation<br>
+                <strong>Test:</strong> Load puzzle with pre-placed neighbors, verify constraints apply immediately
+            </div>
+            <div class="test-grid">
+                <div class="grid-container">
+                    <h3>4×4 Puzzle - Pre-placed Integration</h3>
+                    <canvas id="canvas4" width="300" height="300"></canvas>
+                    <div class="test-controls">
+                        <button onclick="loadPuzzle()">Load Test Puzzle</button>
+                        <button onclick="clearGrid4()">Clear Player Neighbors</button>
+                    </div>
+                    <div id="info4" class="info-panel">
+                        Pre-placed: 0 | Player: 0 | Forbidden: 0
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Visual Style Comparison</h2>
+            <div class="test-grid">
+                <div class="grid-container">
+                    <h3>Subtle Overlay (Minimal)</h3>
+                    <canvas id="canvasMinimal" width="200" height="200"></canvas>
+                </div>
+                <div class="grid-container">
+                    <h3>Grid Fade (Organic)</h3>
+                    <canvas id="canvasOrganic" width="200" height="200"></canvas>
+                </div>
+                <div class="grid-container">
+                    <h3>Cross Hatch (Bold)</h3>
+                    <canvas id="canvasBold" width="200" height="200"></canvas>
+                </div>
+            </div>
+            <div class="test-controls">
+                <button onclick="showAllStyles()">Show All Forbidden Styles</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the game engine modules
+        import { GridController } from '../../../src/game/engine/GridController.js';
+        import { puzzleCatalog } from '../../../src/game/data/puzzleCatalog.js';
+
+        // Global controllers for each test
+        let controller1, controller2, controller3, controller4;
+        let minimalController, organicController, boldController;
+
+        // Initialize all test grids
+        function initializeTests() {
+            // Test 1: Basic lines
+            controller1 = new GridController(document.getElementById('canvas1'), 4, 'organic');
+            
+            // Test 2: Diagonal lines  
+            controller2 = new GridController(document.getElementById('canvas2'), 4, 'minimal');
+            
+            // Test 3: Complex slopes
+            controller3 = new GridController(document.getElementById('canvas3'), 10, 'bold');
+            
+            // Test 4: Pre-placed integration
+            controller4 = new GridController(document.getElementById('canvas4'), 4, 'organic');
+            
+            // Style comparison
+            minimalController = new GridController(document.getElementById('canvasMinimal'), 4, 'minimal');
+            organicController = new GridController(document.getElementById('canvasOrganic'), 4, 'organic');
+            boldController = new GridController(document.getElementById('canvasBold'), 4, 'bold');
+
+            updateInfoPanels();
+        }
+
+        function updateInfoPanels() {
+            updateInfo1();
+            updateInfo2();
+            updateInfo3(); 
+            updateInfo4();
+        }
+
+        function updateInfo1() {
+            const state = controller1.getGridState();
+            document.getElementById('info1').textContent = 
+                `Neighbors: ${state.neighbors.size} | Forbidden squares: ${state.forbiddenSquares.size}`;
+        }
+
+        function updateInfo2() {
+            const state = controller2.getGridState();
+            document.getElementById('info2').textContent = 
+                `Neighbors: ${state.neighbors.size} | Forbidden squares: ${state.forbiddenSquares.size}`;
+        }
+
+        function updateInfo3() {
+            const state = controller3.getGridState();
+            document.getElementById('info3').textContent = 
+                `Neighbors: ${state.neighbors.size} | Forbidden squares: ${state.forbiddenSquares.size}`;
+        }
+
+        function updateInfo4() {
+            const state = controller4.getGridState();
+            document.getElementById('info4').textContent = 
+                `Pre-placed: ${state.prePlacedNeighbors.size} | Player: ${state.neighbors.size} | Forbidden: ${state.forbiddenSquares.size}`;
+        }
+
+        // Test functions
+        window.clearGrid1 = () => {
+            controller1.clearGrid();
+            updateInfo1();
+        };
+
+        window.clearGrid2 = () => {
+            controller2.clearGrid();
+            updateInfo2();
+        };
+
+        window.clearGrid3 = () => {
+            controller3.clearGrid();
+            updateInfo3();
+        };
+
+        window.clearGrid4 = () => {
+            controller4.clearGrid();
+            updateInfo4();
+        };
+
+        window.testHorizontal = () => {
+            clearGrid1();
+            // Simulate clicks at (0,0) and (0,1) for horizontal line
+            const canvas = document.getElementById('canvas1');
+            const rect = canvas.getBoundingClientRect();
+            const renderer = controller1.getRenderer();
+            
+            // Calculate click positions for (0,0) and (0,1)
+            const cellSize = renderer.getCellSize();
+            // These would be actual click coordinates - for now use direct state manipulation
+            const state = controller1.getGridState();
+            state.neighbors.add('0,0');
+            state.neighbors.add('0,1');
+            controller1.setGridState(state);
+            updateInfo1();
+        };
+
+        window.testVertical = () => {
+            clearGrid1();
+            const state = controller1.getGridState();
+            state.neighbors.add('0,0');
+            state.neighbors.add('1,0');
+            controller1.setGridState(state);
+            updateInfo1();
+        };
+
+        window.testDiagonal = () => {
+            clearGrid2();
+            const state = controller2.getGridState();
+            state.neighbors.add('0,0');
+            state.neighbors.add('1,1');
+            controller2.setGridState(state);
+            updateInfo2();
+        };
+
+        window.testAntiDiagonal = () => {
+            clearGrid2();
+            const state = controller2.getGridState();
+            state.neighbors.add('0,3');
+            state.neighbors.add('1,2');
+            controller2.setGridState(state);
+            updateInfo2();
+        };
+
+        window.testSlope2to1 = () => {
+            clearGrid3();
+            const state = controller3.getGridState();
+            state.neighbors.add('0,0');
+            state.neighbors.add('2,1'); // 2:1 slope
+            controller3.setGridState(state);
+            updateInfo3();
+        };
+
+        window.testSlope3to2 = () => {
+            clearGrid3();
+            const state = controller3.getGridState();
+            state.neighbors.add('0,0');
+            state.neighbors.add('3,2'); // 3:2 slope
+            controller3.setGridState(state);
+            updateInfo3();
+        };
+
+        window.loadPuzzle = () => {
+            controller4.loadPuzzle(puzzleCatalog[0]); // Load first puzzle
+            updateInfo4();
+        };
+
+        window.showAllStyles = () => {
+            // Set same constraint pattern for all three styles
+            const testState = {
+                size: 4,
+                neighbors: new Set(['0,0', '0,1']),
+                prePlacedNeighbors: new Set(),
+                forbiddenSquares: new Set()
+            };
+            
+            minimalController.setGridState(testState);
+            organicController.setGridState(testState);  
+            boldController.setGridState(testState);
+        };
+
+        // Theme selector handler
+        document.getElementById('theme1').addEventListener('change', (e) => {
+            controller1.setTheme(e.target.value);
+        });
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeTests);
+    </script>
+</body>
+</html>
