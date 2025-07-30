@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nebby Neighbor - Theme Demo</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 2rem;
+      background: #f5f5f5;
+    }
+    
+    .demo-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 2rem;
+    }
+    
+    .themes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+    
+    .theme-card {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .theme-title {
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #34495e;
+    }
+    
+    .theme-canvas {
+      width: 100%;
+      height: 300px;
+      border-radius: 4px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+    
+    .theme-description {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #7f8c8d;
+      line-height: 1.4;
+    }
+    
+    .controls {
+      text-align: center;
+      margin-top: 2rem;
+    }
+    
+    .btn {
+      background: #3498db;
+      color: white;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 0 0.5rem;
+      font-size: 0.9rem;
+    }
+    
+    .btn:hover {
+      background: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-container">
+    <h1>Nebby Neighbor - Grid Theme Options</h1>
+    
+    <div class="themes-grid">
+      <div class="theme-card">
+        <div class="theme-title">Clean Minimal</div>
+        <canvas id="minimal-canvas" class="theme-canvas"></canvas>
+        <div class="theme-description">
+          Subtle gray lines with thin strokes create a clean, unobtrusive grid. Blue circular neighbors provide clear visibility without visual distraction. Modern and professional appearance ideal for focused gameplay.
+        </div>
+      </div>
+      
+      <div class="theme-card">
+        <div class="theme-title">Bold Geometric</div>
+        <canvas id="bold-canvas" class="theme-canvas"></canvas>
+        <div class="theme-description">
+          Strong dark grid lines with thicker strokes create defined cell boundaries. Red rounded-square neighbors offer high contrast and geometric consistency. Bold design emphasizes structure and precision.
+        </div>
+      </div>
+      
+      <div class="theme-card">
+        <div class="theme-title">Soft Organic</div>
+        <canvas id="organic-canvas" class="theme-canvas"></canvas>
+        <div class="theme-description">
+          Warm brown grid lines with medium thickness create a friendly, approachable feel. Green circular neighbors on a cream background offer gentle contrast. Organic design promotes relaxed, comfortable gameplay.
+        </div>
+      </div>
+    </div>
+    
+    <div class="controls">
+      <button class="btn" onclick="addDemoNeighbors()">Add Sample Neighbors</button>
+      <button class="btn" onclick="clearAllGrids()">Clear All Grids</button>
+      <button class="btn" onclick="window.location.href='/'">Back to Game</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { GridController } from './src/game/engine/GridController.js';
+    
+    const controllers = {};
+    
+    // Initialize all three themes
+    const themes = ['minimal', 'bold', 'organic'];
+    themes.forEach(theme => {
+      const canvas = document.getElementById(`${theme}-canvas`);
+      controllers[theme] = new GridController(canvas, 4, theme);
+    });
+    
+    // Global functions for demo controls
+    window.addDemoNeighbors = () => {
+      const samplePositions = [
+        { row: 0, col: 1 },
+        { row: 1, col: 3 },
+        { row: 2, col: 0 },
+        { row: 3, col: 2 }
+      ];
+      
+      Object.values(controllers).forEach(controller => {
+        controller.clearGrid();
+        samplePositions.forEach(pos => {
+          const key = `${pos.row},${pos.col}`;
+          controller.getGridState().neighbors.add(key);
+        });
+        controller.setGridState(controller.getGridState());
+      });
+    };
+    
+    window.clearAllGrids = () => {
+      Object.values(controllers).forEach(controller => {
+        controller.clearGrid();
+      });
+    };
+  </script>
+</body>
+</html>
