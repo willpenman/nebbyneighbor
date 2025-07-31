@@ -8,8 +8,14 @@ export class GridRenderer {
   private gridState: GridState;
   private cellSize: number = 0;
   private gridOffset: { x: number; y: number } = { x: 0, y: 0 };
+  private panOffset: { x: number; y: number } = { x: 0, y: 0 };
   private theme: GridTheme = gridTheme;
   private inspectionData: InspectionData | ForbiddenSquareInfo | null = null;
+  private isPanning: boolean = false;
+  private lastPanPoint: { x: number; y: number } | null = null;
+  private panStartPoint: { x: number; y: number } | null = null;
+  private panDistance: number = 0;
+  private static readonly PAN_THRESHOLD = 10; // pixels
   private lineStyles = {
     solidLineColor: '#8B7355',    // Soft organic default
     dashedLineColor: '#A67C5A',   // Companion shade
@@ -17,7 +23,7 @@ export class GridRenderer {
     dashPattern: [6, 4],
     opacity: 0.9
   };
-  private static readonly MIN_CELL_SIZE = 55; // 44x44px touch targets (22px radius ÷ 0.4)
+  private static readonly MIN_CELL_SIZE = 44; // WCAG 2.1 AA minimum 44×44px touch targets
   private isScrollable: boolean = false;
   
   constructor(canvas: HTMLCanvasElement, gridState: GridState) {
@@ -33,6 +39,7 @@ export class GridRenderer {
     
     this.setupCanvas();
     this.calculateDimensions();
+    this.setupPanningEvents();
   }
   
   private setupCanvas() {
@@ -49,8 +56,8 @@ export class GridRenderer {
   
   private calculateDimensions() {
     const rect = this.canvas.getBoundingClientRect();
-    // Use reasonable padding - small on mobile, larger on desktop
-    const padding = rect.width < 500 ? 10 : 40;
+    // Use reasonable padding - minimal on mobile, larger on desktop
+    const padding = rect.width < 500 ? 2 : 40;
     const availableWidth = rect.width - (padding * 2);
     const availableHeight = rect.height - (padding * 2);
     // Use minimum dimension to ensure grid fits completely in viewport
@@ -83,13 +90,149 @@ export class GridRenderer {
     
     if (this.isScrollable) {
       // For scrollable grids, position at top with minimal padding, center horizontally
-      this.gridOffset.x = Math.max(20, (rect.width - totalGridWidth) / 2);
+      this.gridOffset.x = Math.max(2, (rect.width - totalGridWidth) / 2);
       this.gridOffset.y = 20; // Always position at top for scrollable grids
     } else {
       // For non-scrollable grids, center normally
       this.gridOffset.x = (rect.width - totalGridWidth) / 2;
       this.gridOffset.y = (rect.height - totalGridHeight) / 2;
     }
+    
+    // Set appropriate cursor
+    this.canvas.style.cursor = this.isScrollable ? 'grab' : 'pointer';
+  }
+  
+  private setupPanningEvents() {
+    // Mouse events for desktop
+    this.canvas.addEventListener('mousedown', this.handlePanStart.bind(this));
+    this.canvas.addEventListener('mousemove', this.handlePanMove.bind(this));
+    this.canvas.addEventListener('mouseup', this.handlePanEnd.bind(this));
+    this.canvas.addEventListener('mouseleave', this.handlePanEnd.bind(this));
+    
+    // Touch events for mobile
+    this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this));
+    this.canvas.addEventListener('touchmove', this.handleTouchMove.bind(this));
+    this.canvas.addEventListener('touchend', this.handleTouchEnd.bind(this));
+  }
+  
+  private handlePanStart(event: MouseEvent) {
+    if (!this.isScrollable) return;
+    
+    this.panStartPoint = { x: event.clientX, y: event.clientY };
+    this.lastPanPoint = { x: event.clientX, y: event.clientY };
+    this.panDistance = 0;
+    this.isPanning = false; // Don't set to true until we exceed threshold
+  }
+  
+  private handlePanMove(event: MouseEvent) {
+    if (!this.isScrollable || !this.lastPanPoint || !this.panStartPoint) return;
+    
+    // Calculate total distance from start
+    const totalDeltaX = event.clientX - this.panStartPoint.x;
+    const totalDeltaY = event.clientY - this.panStartPoint.y;
+    this.panDistance = Math.sqrt(totalDeltaX * totalDeltaX + totalDeltaY * totalDeltaY);
+    
+    // Only start panning if we exceed threshold
+    if (this.panDistance > GridRenderer.PAN_THRESHOLD && !this.isPanning) {
+      this.isPanning = true;
+      this.canvas.style.cursor = 'grabbing';
+    }
+    
+    if (this.isPanning) {
+      const deltaX = event.clientX - this.lastPanPoint.x;
+      const deltaY = event.clientY - this.lastPanPoint.y;
+      
+      this.updatePanOffset(deltaX, deltaY);
+    }
+    
+    this.lastPanPoint = { x: event.clientX, y: event.clientY };
+  }
+  
+  private handlePanEnd() {
+    if (!this.isScrollable) return;
+    
+    const wasPanning = this.isPanning;
+    this.isPanning = false;
+    this.lastPanPoint = null;
+    this.panStartPoint = null;
+    this.panDistance = 0;
+    this.canvas.style.cursor = this.isScrollable ? 'grab' : 'pointer';
+    
+    // Return whether this was a pan gesture (for click prevention)
+    return wasPanning;
+  }
+  
+  private handleTouchStart(event: TouchEvent) {
+    if (!this.isScrollable) return;
+    
+    const touch = event.touches[0];
+    this.panStartPoint = { x: touch.clientX, y: touch.clientY };
+    this.lastPanPoint = { x: touch.clientX, y: touch.clientY };
+    this.panDistance = 0;
+    this.isPanning = false; // Don't set to true until we exceed threshold
+  }
+  
+  private handleTouchMove(event: TouchEvent) {
+    if (!this.isScrollable || !this.lastPanPoint || !this.panStartPoint) return;
+    
+    const touch = event.touches[0];
+    
+    // Calculate total distance from start
+    const totalDeltaX = touch.clientX - this.panStartPoint.x;
+    const totalDeltaY = touch.clientY - this.panStartPoint.y;
+    this.panDistance = Math.sqrt(totalDeltaX * totalDeltaX + totalDeltaY * totalDeltaY);
+    
+    // Only start panning if we exceed threshold
+    if (this.panDistance > GridRenderer.PAN_THRESHOLD && !this.isPanning) {
+      this.isPanning = true;
+      event.preventDefault(); // Only prevent default when actually panning
+    }
+    
+    if (this.isPanning) {
+      event.preventDefault();
+      const deltaX = touch.clientX - this.lastPanPoint.x;
+      const deltaY = touch.clientY - this.lastPanPoint.y;
+      
+      this.updatePanOffset(deltaX, deltaY);
+    }
+    
+    this.lastPanPoint = { x: touch.clientX, y: touch.clientY };
+  }
+  
+  private handleTouchEnd(event: TouchEvent) {
+    if (!this.isScrollable) return;
+    
+    const wasPanning = this.isPanning;
+    
+    // Only prevent default if we were actually panning
+    if (wasPanning) {
+      event.preventDefault();
+    }
+    
+    this.isPanning = false;
+    this.lastPanPoint = null;
+    this.panStartPoint = null;
+    this.panDistance = 0;
+    
+    // Return whether this was a pan gesture (for click prevention)
+    return wasPanning;
+  }
+  
+  private updatePanOffset(deltaX: number, deltaY: number) {
+    const rect = this.canvas.getBoundingClientRect();
+    const totalGridWidth = this.cellSize * this.gridState.size;
+    const totalGridHeight = this.cellSize * this.gridState.size;
+    
+    // Calculate bounds for panning - ensure full cells are visible with some padding
+    const padding = 10;
+    const maxPanX = Math.max(0, totalGridWidth - rect.width + padding * 2);
+    const maxPanY = Math.max(0, totalGridHeight - rect.height + padding * 2);
+    
+    // Update pan offset with bounds checking
+    this.panOffset.x = Math.max(-maxPanX, Math.min(0, this.panOffset.x + deltaX));
+    this.panOffset.y = Math.max(-maxPanY, Math.min(0, this.panOffset.y + deltaY));
+    
+    this.render();
   }
   
   render() {
@@ -117,18 +260,20 @@ export class GridRenderer {
     this.ctx.lineWidth = this.theme.gridLineWidth;
     
     const gridSize = this.cellSize * this.gridState.size;
+    const offsetX = this.gridOffset.x + this.panOffset.x;
+    const offsetY = this.gridOffset.y + this.panOffset.y;
     
     for (let i = 0; i <= this.gridState.size; i++) {
       const pos = i * this.cellSize;
       
       this.ctx.beginPath();
-      this.ctx.moveTo(this.gridOffset.x + pos, this.gridOffset.y);
-      this.ctx.lineTo(this.gridOffset.x + pos, this.gridOffset.y + gridSize);
+      this.ctx.moveTo(offsetX + pos, offsetY);
+      this.ctx.lineTo(offsetX + pos, offsetY + gridSize);
       this.ctx.stroke();
       
       this.ctx.beginPath();
-      this.ctx.moveTo(this.gridOffset.x, this.gridOffset.y + pos);
-      this.ctx.lineTo(this.gridOffset.x + gridSize, this.gridOffset.y + pos);
+      this.ctx.moveTo(offsetX, offsetY + pos);
+      this.ctx.lineTo(offsetX + gridSize, offsetY + pos);
       this.ctx.stroke();
     }
   }
@@ -144,8 +289,8 @@ export class GridRenderer {
 
     for (const squareKey of this.gridState.forbiddenSquares) {
       const [row, col] = squareKey.split(',').map(Number);
-      const x = this.gridOffset.x + (col * this.cellSize);
-      const y = this.gridOffset.y + (row * this.cellSize);
+      const x = this.gridOffset.x + this.panOffset.x + (col * this.cellSize);
+      const y = this.gridOffset.y + this.panOffset.y + (row * this.cellSize);
 
       this.ctx.save();
       this.ctx.globalAlpha = opacity;
@@ -218,8 +363,8 @@ export class GridRenderer {
     
     for (const neighborKey of this.gridState.neighbors) {
       const [row, col] = neighborKey.split(',').map(Number);
-      const centerX = this.gridOffset.x + (col * this.cellSize) + (this.cellSize / 2);
-      const centerY = this.gridOffset.y + (row * this.cellSize) + (this.cellSize / 2);
+      const centerX = this.gridOffset.x + this.panOffset.x + (col * this.cellSize) + (this.cellSize / 2);
+      const centerY = this.gridOffset.y + this.panOffset.y + (row * this.cellSize) + (this.cellSize / 2);
       const radius = Math.min(this.cellSize * this.theme.neighborRadius, 25);
       
       this.drawNeighborShape(centerX, centerY, radius, this.theme.neighborStyle, false);
@@ -228,8 +373,8 @@ export class GridRenderer {
     // Draw pre-placed neighbors with distinct styling
     for (const neighborKey of this.gridState.prePlacedNeighbors) {
       const [row, col] = neighborKey.split(',').map(Number);
-      const centerX = this.gridOffset.x + (col * this.cellSize) + (this.cellSize / 2);
-      const centerY = this.gridOffset.y + (row * this.cellSize) + (this.cellSize / 2);
+      const centerX = this.gridOffset.x + this.panOffset.x + (col * this.cellSize) + (this.cellSize / 2);
+      const centerY = this.gridOffset.y + this.panOffset.y + (row * this.cellSize) + (this.cellSize / 2);
       const radius = Math.min(this.cellSize * this.theme.neighborRadius, 25);
       
       this.drawNeighborShape(centerX, centerY, radius, this.theme.neighborStyle, true);
@@ -356,8 +501,8 @@ export class GridRenderer {
   
   private gridPositionToScreen(pos: GridPosition): { x: number; y: number } {
     return {
-      x: this.gridOffset.x + (pos.col * this.cellSize) + (this.cellSize / 2),
-      y: this.gridOffset.y + (pos.row * this.cellSize) + (this.cellSize / 2)
+      x: this.gridOffset.x + this.panOffset.x + (pos.col * this.cellSize) + (this.cellSize / 2),
+      y: this.gridOffset.y + this.panOffset.y + (pos.row * this.cellSize) + (this.cellSize / 2)
     };
   }
   
@@ -369,8 +514,8 @@ export class GridRenderer {
   
   screenToGridPosition(clientX: number, clientY: number): GridPosition | null {
     const rect = this.canvas.getBoundingClientRect();
-    const x = clientX - rect.left - this.gridOffset.x;
-    const y = clientY - rect.top - this.gridOffset.y;
+    const x = clientX - rect.left - this.gridOffset.x - this.panOffset.x;
+    const y = clientY - rect.top - this.gridOffset.y - this.panOffset.y;
     
     if (x < 0 || y < 0) return null;
     
@@ -385,6 +530,7 @@ export class GridRenderer {
   resize() {
     this.setupCanvas();
     this.calculateDimensions();
+    this.panOffset = { x: 0, y: 0 }; // Reset pan when resizing
     this.render();
   }
   

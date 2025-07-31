@@ -14,8 +14,13 @@ For mobile testing, use `npm run dev -- --host` to expose the development server
 
 **Development commands:**
 - `npm run dev` - Start development server at http://localhost:3000
+- `npm run dev -- --host` - Expose server for mobile testing at wills-macbook-pro-6.local:3000
 - `npm run build` - Build for production (outputs to dist/)
 - `npm run preview` - Preview production build locally
+
+**Issue-specific testing:**
+- `http://localhost:3000?issue=N` - Load specific issue configuration (N=2-7 available)
+- `http://localhost:3000/src/dev/index-N.html` - Direct access to issue dev page
 
 **Project structure:**
 - `docs/development/` - Development artifacts, screenshots, and issue documentation

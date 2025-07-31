@@ -25,6 +25,14 @@ export class GridController {
       this.handleCellClick(e.clientX, e.clientY);
     });
     
+    // Listen for clicks anywhere on the document to exit inspect mode
+    document.addEventListener('click', (e) => {
+      // Only clear inspect mode if click is outside the canvas
+      if (!this.canvas.contains(e.target as Node)) {
+        this.clearInspectMode();
+      }
+    });
+    
     window.addEventListener('resize', () => {
       this.renderer.resize();
     });
