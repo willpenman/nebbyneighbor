@@ -223,13 +223,12 @@ export class LineDetector {
           return !allNeighbors.has(key); // Only include empty squares
         });
       
-      if (forbiddenSquares.length > 0) {
-        constraintRelationships.push({
-          neighborPair: [inspectedNeighbor, otherNeighbor],
-          line,
-          forbiddenSquares
-        });
-      }
+      // Include ALL neighbor relationships, even if they create no forbidden squares
+      constraintRelationships.push({
+        neighborPair: [inspectedNeighbor, otherNeighbor],
+        line,
+        forbiddenSquares
+      });
     }
     
     return {

@@ -49,16 +49,20 @@ export class GridController {
     
     const key = positionToKey(position);
     const isPrePlaced = this.gridState.prePlacedNeighbors.has(key);
-    
-    // Don't allow interaction with pre-placed neighbors
-    if (isPrePlaced) return;
-    
     const hasNeighbor = this.gridState.neighbors.has(key);
     const isForbidden = this.gridState.forbiddenSquares.has(key);
     const isCurrentlyInspecting = this.gridState.inspectionMode && 
       positionToKey(this.gridState.inspectionMode.position) === key;
     
-    if (hasNeighbor) {
+    if (isPrePlaced) {
+      if (isCurrentlyInspecting) {
+        // Second click on inspected pre-placed neighbor turns off inspect mode
+        this.clearInspectMode();
+      } else {
+        // First click on pre-placed neighbor enters inspection mode (but can't remove)
+        this.enterNeighborInspectMode(position);
+      }
+    } else if (hasNeighbor) {
       if (isCurrentlyInspecting) {
         // Second click on inspected neighbor removes it
         this.removeNeighbor(position);
@@ -67,8 +71,13 @@ export class GridController {
         this.enterNeighborInspectMode(position);
       }
     } else if (isForbidden) {
-      // Click on forbidden square shows why it's forbidden
-      this.enterForbiddenSquareInspectMode(position);
+      if (isCurrentlyInspecting) {
+        // Second click on inspected forbidden square turns off inspect mode
+        this.clearInspectMode();
+      } else {
+        // First click on forbidden square shows why it's forbidden
+        this.enterForbiddenSquareInspectMode(position);
+      }
     } else {
       // Click on empty square places neighbor and enters inspection mode
       this.placeNeighbor(position);
