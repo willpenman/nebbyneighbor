@@ -8,6 +8,10 @@ export type GridState = {
   neighbors: Set<string>;
   prePlacedNeighbors: Set<string>;
   forbiddenSquares: Set<string>;
+  inspectionMode?: {
+    type: 'neighbor' | 'forbidden-square';
+    position: GridPosition;
+  };
 };
 
 export type GridCell = {

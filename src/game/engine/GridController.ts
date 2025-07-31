@@ -1,13 +1,12 @@
 import { GridState, GridPosition, positionToKey, createGridState } from '../types/grid.js';
 import { GridRenderer } from '../ui/GridRenderer.js';
 import { PuzzleConfig, PuzzleState } from '../types/puzzle.js';
-import { LineDetector } from './LineDetector.js';
+import { LineDetector, InspectionData, ForbiddenSquareInfo } from './LineDetector.js';
 
 export class GridController {
   private gridState: GridState;
   private renderer: GridRenderer;
   private canvas: HTMLCanvasElement;
-  private inspectingPosition: GridPosition | null = null;
   private puzzleState: PuzzleState | null = null;
   private lineDetector: LineDetector;
   
@@ -33,7 +32,12 @@ export class GridController {
   
   private handleCellClick(clientX: number, clientY: number) {
     const position = this.renderer.screenToGridPosition(clientX, clientY);
-    if (!position) return;
+    
+    // Handle clicks outside the grid (exit inspection mode)
+    if (!position) {
+      this.clearInspectMode();
+      return;
+    }
     
     const key = positionToKey(position);
     const isPrePlaced = this.gridState.prePlacedNeighbors.has(key);
@@ -42,16 +46,23 @@ export class GridController {
     if (isPrePlaced) return;
     
     const hasNeighbor = this.gridState.neighbors.has(key);
-    const isInspecting = this.inspectingPosition && 
-      positionToKey(this.inspectingPosition) === key;
+    const isForbidden = this.gridState.forbiddenSquares.has(key);
+    const isCurrentlyInspecting = this.gridState.inspectionMode && 
+      positionToKey(this.gridState.inspectionMode.position) === key;
     
     if (hasNeighbor) {
-      if (isInspecting) {
+      if (isCurrentlyInspecting) {
+        // Second click on inspected neighbor removes it
         this.removeNeighbor(position);
       } else {
-        this.enterInspectMode(position);
+        // First click on neighbor enters inspection mode
+        this.enterNeighborInspectMode(position);
       }
+    } else if (isForbidden) {
+      // Click on forbidden square shows why it's forbidden
+      this.enterForbiddenSquareInspectMode(position);
     } else {
+      // Click on empty square places neighbor and enters inspection mode
       this.placeNeighbor(position);
     }
   }
@@ -60,8 +71,9 @@ export class GridController {
     const key = positionToKey(position);
     this.gridState.neighbors.add(key);
     this.updateForbiddenSquares();
-    this.clearInspectMode();
-    this.render();
+    
+    // Automatically enter inspection mode for newly placed neighbor
+    this.enterNeighborInspectMode(position);
   }
   
   private removeNeighbor(position: GridPosition) {
@@ -72,13 +84,25 @@ export class GridController {
     this.render();
   }
   
-  private enterInspectMode(position: GridPosition) {
-    this.inspectingPosition = position;
+  private enterNeighborInspectMode(position: GridPosition) {
+    this.gridState.inspectionMode = {
+      type: 'neighbor',
+      position
+    };
+    this.render();
+  }
+  
+  private enterForbiddenSquareInspectMode(position: GridPosition) {
+    this.gridState.inspectionMode = {
+      type: 'forbidden-square',
+      position
+    };
     this.render();
   }
   
   private clearInspectMode() {
-    this.inspectingPosition = null;
+    this.gridState.inspectionMode = undefined;
+    this.render();
   }
 
   private updateForbiddenSquares() {
@@ -93,6 +117,7 @@ export class GridController {
   
   private render() {
     this.renderer.updateGridState(this.gridState);
+    this.renderer.updateInspectionData(this.getInspectionData());
   }
   
   getGridState(): GridState {
@@ -116,7 +141,6 @@ export class GridController {
     // Don't clear pre-placed neighbors
     this.updateForbiddenSquares();
     this.clearInspectMode();
-    this.render();
   }
   
   loadPuzzle(puzzleConfig: PuzzleConfig) {
@@ -139,7 +163,27 @@ export class GridController {
     
     this.updateForbiddenSquares();
     this.clearInspectMode();
-    this.render();
+  }
+  
+  getInspectionData(): InspectionData | ForbiddenSquareInfo | null {
+    if (!this.gridState.inspectionMode) return null;
+    
+    const allNeighbors = new Set([
+      ...this.gridState.neighbors,
+      ...this.gridState.prePlacedNeighbors
+    ]);
+    
+    if (this.gridState.inspectionMode.type === 'neighbor') {
+      return this.lineDetector.getInspectionData(
+        this.gridState.inspectionMode.position,
+        allNeighbors
+      );
+    } else {
+      return this.lineDetector.getForbiddenSquareInfo(
+        this.gridState.inspectionMode.position,
+        allNeighbors
+      );
+    }
   }
   
   getPuzzleState(): PuzzleState | null {

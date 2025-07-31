@@ -226,6 +226,8 @@ Since players are relatively slow compared to computational requirements, we opt
 
 **Issue #6 - Constraint Visualization:** Chose "Grid Fade (Organic)" approach for forbidden squares, using faded background with dashed inner grid pattern at 50% opacity to provide clear constraint feedback without overwhelming the interface.
 
+**Issue #7 - Diagnostic Inspection Mode:** Selected "Soft Organic" line visualization approach with natural earth tones (#8B7355 solid, #A67C5A dashed), 2px line weight, [6,4] dash pattern, and 90% opacity. This provides immediate educational feedback on constraint relationships while maintaining perfect harmony with the game's warm, approachable aesthetic. The system features automatic inspection on neighbor placement, manual inspection via clicking existing neighbors, forbidden square analysis, and click-elsewhere exit behavior.
+
 ### Design Testing
 
 **Compatibility Requirements - Critical Dependencies:**

@@ -1,5 +1,6 @@
 import { GridState, GridPosition } from '../types/grid.js';
 import { GridTheme, gridTheme } from './GridThemes.js';
+import { InspectionData, ForbiddenSquareInfo, ConstraintRelationship } from '../engine/LineDetector.js';
 
 export class GridRenderer {
   private canvas: HTMLCanvasElement;
@@ -8,6 +9,14 @@ export class GridRenderer {
   private cellSize: number = 0;
   private gridOffset: { x: number; y: number } = { x: 0, y: 0 };
   private theme: GridTheme = gridTheme;
+  private inspectionData: InspectionData | ForbiddenSquareInfo | null = null;
+  private lineStyles = {
+    solidLineColor: '#8B7355',    // Soft organic default
+    dashedLineColor: '#A67C5A',   // Companion shade
+    lineWidth: 2,
+    dashPattern: [6, 4],
+    opacity: 0.9
+  };
   private static readonly MIN_CELL_SIZE = 55; // 44x44px touch targets (22px radius ÷ 0.4)
   private isScrollable: boolean = false;
   
@@ -89,6 +98,7 @@ export class GridRenderer {
     this.drawGrid();
     this.drawForbiddenSquares();
     this.drawNeighbors();
+    this.drawConstraintLines();
   }
   
   private clear() {
@@ -284,6 +294,79 @@ export class GridRenderer {
     this.ctx.closePath();
   }
   
+  private drawConstraintLines() {
+    if (!this.inspectionData) return;
+    
+    this.ctx.save();
+    this.ctx.lineWidth = this.lineStyles.lineWidth;
+    this.ctx.globalAlpha = this.lineStyles.opacity;
+    
+    if ('constraintRelationships' in this.inspectionData) {
+      // Neighbor inspection mode
+      for (const relationship of this.inspectionData.constraintRelationships) {
+        this.drawConstraintRelationship(relationship, this.lineStyles.solidLineColor, this.lineStyles.dashedLineColor);
+      }
+    } else {
+      // Forbidden square inspection mode
+      for (const relationship of this.inspectionData.causedBy) {
+        this.drawConstraintRelationship(relationship, this.lineStyles.solidLineColor, this.lineStyles.dashedLineColor);
+      }
+    }
+    
+    this.ctx.restore();
+  }
+  
+  private drawConstraintRelationship(relationship: ConstraintRelationship, solidColor: string, dashedColor: string) {
+    const [pos1, pos2] = relationship.neighborPair;
+    
+    // Calculate screen coordinates for neighbors
+    const pos1Screen = this.gridPositionToScreen(pos1);
+    const pos2Screen = this.gridPositionToScreen(pos2);
+    
+    // Draw solid line between the two neighbors
+    this.ctx.strokeStyle = solidColor;
+    this.ctx.setLineDash([]);
+    this.ctx.beginPath();
+    this.ctx.moveTo(pos1Screen.x, pos1Screen.y);
+    this.ctx.lineTo(pos2Screen.x, pos2Screen.y);
+    this.ctx.stroke();
+    
+    // Draw dashed lines to forbidden squares on the line
+    this.ctx.strokeStyle = dashedColor;
+    this.ctx.setLineDash(this.lineStyles.dashPattern);
+    
+    for (const forbiddenPos of relationship.forbiddenSquares) {
+      const forbiddenScreen = this.gridPositionToScreen(forbiddenPos);
+      
+      // Find which neighbor is closer to draw from
+      const dist1 = this.getDistance(pos1Screen, forbiddenScreen);
+      const dist2 = this.getDistance(pos2Screen, forbiddenScreen);
+      
+      const startScreen = dist1 < dist2 ? pos1Screen : pos2Screen;
+      
+      this.ctx.beginPath();
+      this.ctx.moveTo(startScreen.x, startScreen.y);
+      this.ctx.lineTo(forbiddenScreen.x, forbiddenScreen.y);
+      this.ctx.stroke();
+    }
+    
+    // Reset line dash
+    this.ctx.setLineDash([]);
+  }
+  
+  private gridPositionToScreen(pos: GridPosition): { x: number; y: number } {
+    return {
+      x: this.gridOffset.x + (pos.col * this.cellSize) + (this.cellSize / 2),
+      y: this.gridOffset.y + (pos.row * this.cellSize) + (this.cellSize / 2)
+    };
+  }
+  
+  private getDistance(pos1: { x: number; y: number }, pos2: { x: number; y: number }): number {
+    const dx = pos1.x - pos2.x;
+    const dy = pos1.y - pos2.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  
   screenToGridPosition(clientX: number, clientY: number): GridPosition | null {
     const rect = this.canvas.getBoundingClientRect();
     const x = clientX - rect.left - this.gridOffset.x;
@@ -307,6 +390,22 @@ export class GridRenderer {
   
   updateGridState(newState: GridState) {
     this.gridState = newState;
+    this.render();
+  }
+  
+  updateInspectionData(data: InspectionData | ForbiddenSquareInfo | null) {
+    this.inspectionData = data;
+    this.render();
+  }
+  
+  updateLineStyles(styles: {
+    solidLineColor?: string;
+    dashedLineColor?: string;
+    lineWidth?: number;
+    dashPattern?: number[];
+    opacity?: number;
+  }) {
+    this.lineStyles = { ...this.lineStyles, ...styles };
     this.render();
   }
   

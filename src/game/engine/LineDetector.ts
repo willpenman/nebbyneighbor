@@ -14,6 +14,22 @@ export type LineViolation = {
   neighbors: GridPosition[];
 };
 
+export type ConstraintRelationship = {
+  neighborPair: [GridPosition, GridPosition];
+  line: LineRepresentation;
+  forbiddenSquares: GridPosition[];
+};
+
+export type InspectionData = {
+  inspectedNeighbor: GridPosition;
+  constraintRelationships: ConstraintRelationship[];
+};
+
+export type ForbiddenSquareInfo = {
+  position: GridPosition;
+  causedBy: ConstraintRelationship[];
+};
+
 export class LineDetector {
   constructor(private gridSize: number) {}
   
@@ -183,6 +199,85 @@ export class LineDetector {
     return leftSide === rightSide;
   }
   
+  /**
+   * Get inspection data for a specific neighbor showing all its constraint relationships
+   */
+  getInspectionData(inspectedNeighbor: GridPosition, allNeighbors: Set<string>): InspectionData {
+    const inspectedKey = positionToKey(inspectedNeighbor);
+    const neighborPositions = Array.from(allNeighbors).map(key => {
+      const [row, col] = key.split(',').map(Number);
+      return { row, col };
+    });
+    
+    const constraintRelationships: ConstraintRelationship[] = [];
+    
+    // Find all neighbors that form constraint relationships with the inspected neighbor
+    for (const otherNeighbor of neighborPositions) {
+      const otherKey = positionToKey(otherNeighbor);
+      if (otherKey === inspectedKey) continue;
+      
+      const line = this.getLineFromTwoPoints(inspectedNeighbor, otherNeighbor);
+      const forbiddenSquares = this.findGridPositionsOnLine(line)
+        .filter(pos => {
+          const key = positionToKey(pos);
+          return !allNeighbors.has(key); // Only include empty squares
+        });
+      
+      if (forbiddenSquares.length > 0) {
+        constraintRelationships.push({
+          neighborPair: [inspectedNeighbor, otherNeighbor],
+          line,
+          forbiddenSquares
+        });
+      }
+    }
+    
+    return {
+      inspectedNeighbor,
+      constraintRelationships
+    };
+  }
+  
+  /**
+   * Get information about why a forbidden square is forbidden
+   */
+  getForbiddenSquareInfo(forbiddenSquare: GridPosition, allNeighbors: Set<string>): ForbiddenSquareInfo {
+    const neighborPositions = Array.from(allNeighbors).map(key => {
+      const [row, col] = key.split(',').map(Number);
+      return { row, col };
+    });
+    
+    const causedBy: ConstraintRelationship[] = [];
+    
+    // Find all neighbor pairs whose line passes through this forbidden square
+    for (let i = 0; i < neighborPositions.length; i++) {
+      for (let j = i + 1; j < neighborPositions.length; j++) {
+        const pos1 = neighborPositions[i];
+        const pos2 = neighborPositions[j];
+        const line = this.getLineFromTwoPoints(pos1, pos2);
+        
+        if (this.isPointOnLine(forbiddenSquare, line)) {
+          const forbiddenSquares = this.findGridPositionsOnLine(line)
+            .filter(pos => {
+              const key = positionToKey(pos);
+              return !allNeighbors.has(key);
+            });
+          
+          causedBy.push({
+            neighborPair: [pos1, pos2],
+            line,
+            forbiddenSquares
+          });
+        }
+      }
+    }
+    
+    return {
+      position: forbiddenSquare,
+      causedBy
+    };
+  }
+
   /**
    * Calculate Greatest Common Divisor
    */

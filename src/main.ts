@@ -83,8 +83,20 @@ function setupDevModeListeners(controller: GridController, devOverlay: DevOverla
     // Apply theme to renderer
     const renderer = controller.getRenderer();
     if (renderer && themeConfig?.forbiddenSquareStyle) {
-      // Update renderer with new forbidden square style
+      // Update renderer with forbidden square style and line styles
       renderer.updateForbiddenSquareStyle(themeConfig.forbiddenSquareStyle);
+      
+      // Update constraint line styles if they exist
+      if (themeConfig.forbiddenSquareStyle) {
+        const lineStyles = {
+          solidLineColor: themeConfig.forbiddenSquareStyle.solidLineColor || '#8B7355',
+          dashedLineColor: themeConfig.forbiddenSquareStyle.dashedLineColor || '#A67C5A',
+          lineWidth: themeConfig.forbiddenSquareStyle.lineWidth || 2,
+          dashPattern: themeConfig.forbiddenSquareStyle.dashPattern || [6, 4],
+          opacity: themeConfig.forbiddenSquareStyle.opacity || 0.9
+        };
+        renderer.updateLineStyles(lineStyles);
+      }
     }
     
     devOverlay.updateDebugInfo(`Theme: ${themeKey} applied`);
