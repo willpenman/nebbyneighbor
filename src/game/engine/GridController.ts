@@ -1,4 +1,4 @@
-import { GridState, GridPosition, positionToKey, createGridState } from '../types/grid.js';
+import { GridState, GridPosition, positionToKey, createGridState, getMostRecentNeighbor } from '../types/grid.js';
 import { GridRenderer } from '../ui/GridRenderer.js';
 import { StatusBar } from '../ui/StatusBar.js';
 import { PuzzleConfig, PuzzleState } from '../types/puzzle.js';
@@ -57,6 +57,12 @@ export class GridController {
     const isCurrentlyInspecting = this.gridState.inspectionMode && 
       positionToKey(this.gridState.inspectionMode.position) === key;
     
+    // Check if this is the most recently placed neighbor
+    const mostRecentNeighbor = getMostRecentNeighbor(this.gridState);
+    const isMostRecent = mostRecentNeighbor && 
+      position.row === mostRecentNeighbor.row && 
+      position.col === mostRecentNeighbor.col;
+    
     if (isPrePlaced) {
       if (isCurrentlyInspecting) {
         // Second click on inspected pre-placed neighbor turns off inspect mode
@@ -66,11 +72,14 @@ export class GridController {
         this.enterNeighborInspectMode(position);
       }
     } else if (hasNeighbor) {
-      if (isCurrentlyInspecting) {
+      if (isMostRecent) {
+        // First click on most recent neighbor removes it directly
+        this.removeNeighbor(position);
+      } else if (isCurrentlyInspecting) {
         // Second click on inspected neighbor removes it
         this.removeNeighbor(position);
       } else {
-        // First click on neighbor enters inspection mode
+        // First click on older neighbor enters inspection mode
         this.enterNeighborInspectMode(position);
       }
     } else if (isForbidden) {
@@ -97,6 +106,7 @@ export class GridController {
     
     const key = positionToKey(position);
     this.gridState.neighbors.add(key);
+    this.gridState.moveHistory.push(position);
     this.updateForbiddenSquares();
     this.updateStatusBar();
     
@@ -107,6 +117,12 @@ export class GridController {
   private removeNeighbor(position: GridPosition) {
     const key = positionToKey(position);
     this.gridState.neighbors.delete(key);
+    
+    // Remove this position from move history
+    this.gridState.moveHistory = this.gridState.moveHistory.filter(
+      move => !(move.row === position.row && move.col === position.col)
+    );
+    
     this.updateForbiddenSquares();
     this.updateStatusBar();
     this.clearInspectMode();
@@ -182,7 +198,8 @@ export class GridController {
       ...this.gridState, 
       neighbors: new Set(this.gridState.neighbors),
       prePlacedNeighbors: new Set(this.gridState.prePlacedNeighbors),
-      forbiddenSquares: new Set(this.gridState.forbiddenSquares)
+      forbiddenSquares: new Set(this.gridState.forbiddenSquares),
+      moveHistory: [...this.gridState.moveHistory]
     };
   }
   
@@ -195,6 +212,7 @@ export class GridController {
   
   clearGrid() {
     this.gridState.neighbors.clear();
+    this.gridState.moveHistory = [];
     // Don't clear pre-placed neighbors
     this.updateForbiddenSquares();
     this.clearInspectMode();

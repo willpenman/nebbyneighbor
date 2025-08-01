@@ -1,4 +1,4 @@
-import { GridState, GridPosition } from '../types/grid.js';
+import { GridState, GridPosition, getMostRecentNeighbor, positionToKey } from '../types/grid.js';
 import { GridTheme, gridTheme } from './GridThemes.js';
 import { InspectionData, ForbiddenSquareInfo, ConstraintRelationship } from '../engine/LineDetector.js';
 
@@ -26,6 +26,26 @@ export class GridRenderer {
   private static readonly MIN_CELL_SIZE = 44; // WCAG 2.1 AA minimum 44×44px touch targets
   private isScrollable: boolean = false;
   private warningStyle: string = 'headers'; // Default warning style
+  private recentNeighborHighlight: {
+    type: string;
+    backgroundColor?: string;
+    backgroundOpacity?: number;
+    borderColor?: string | null;
+    borderWidth?: number;
+    borderOpacity?: number;
+    glowColor?: string;
+    glowRadius?: number;
+    glowOpacity?: number;
+    innerGlowColor?: string;
+    innerGlowRadius?: number;
+  } = {
+    type: 'square',
+    backgroundColor: '#A8D4A8',
+    backgroundOpacity: 0.3,
+    borderColor: null,
+    borderWidth: 0,
+    borderOpacity: 0
+  };
   
   constructor(canvas: HTMLCanvasElement, gridState: GridState) {
     this.canvas = canvas;
@@ -363,6 +383,9 @@ export class GridRenderer {
   }
   
   private drawNeighbors() {
+    const mostRecentNeighbor = getMostRecentNeighbor(this.gridState);
+    const mostRecentKey = mostRecentNeighbor ? positionToKey(mostRecentNeighbor) : null;
+    
     // Draw player-placed neighbors
     this.ctx.fillStyle = this.theme.neighborColor;
     
@@ -372,7 +395,8 @@ export class GridRenderer {
       const centerY = this.gridOffset.y + this.panOffset.y + (row * this.cellSize) + (this.cellSize / 2);
       const radius = Math.min(this.cellSize * this.theme.neighborRadius, 25);
       
-      this.drawNeighborShape(centerX, centerY, radius, this.theme.neighborStyle, false);
+      const isHighlighted = neighborKey === mostRecentKey;
+      this.drawNeighborShape(centerX, centerY, radius, this.theme.neighborStyle, false, isHighlighted);
     }
     
     // Draw pre-placed neighbors with distinct styling
@@ -382,13 +406,18 @@ export class GridRenderer {
       const centerY = this.gridOffset.y + this.panOffset.y + (row * this.cellSize) + (this.cellSize / 2);
       const radius = Math.min(this.cellSize * this.theme.neighborRadius, 25);
       
-      this.drawNeighborShape(centerX, centerY, radius, this.theme.neighborStyle, true);
+      this.drawNeighborShape(centerX, centerY, radius, this.theme.neighborStyle, true, false);
     }
   }
   
-  private drawNeighborShape(centerX: number, centerY: number, radius: number, shape: 'circle' | 'rounded-square', isPrePlaced: boolean) {
+  private drawNeighborShape(centerX: number, centerY: number, radius: number, shape: 'circle' | 'rounded-square', isPrePlaced: boolean, isHighlighted: boolean = false) {
     const color = isPrePlaced ? this.theme.prePlacedNeighborColor : this.theme.neighborColor;
     const styleType = isPrePlaced ? this.theme.prePlacedNeighborStyle : 'solid';
+    
+    // Draw highlighting effect if this neighbor is highlighted
+    if (isHighlighted && this.recentNeighborHighlight) {
+      this.drawHighlightEffect(centerX, centerY, radius, shape);
+    }
     
     if (shape === 'circle') {
       this.ctx.beginPath();
@@ -605,6 +634,87 @@ export class GridRenderer {
   updateWarningStyle(warningStyle: string) {
     this.warningStyle = warningStyle;
     this.render();
+  }
+
+  updateRecentNeighborHighlight(highlightStyle: typeof this.recentNeighborHighlight) {
+    this.recentNeighborHighlight = highlightStyle;
+    this.render();
+  }
+
+  private drawHighlightEffect(centerX: number, centerY: number, radius: number, shape: 'circle' | 'rounded-square') {
+    if (!this.recentNeighborHighlight) return;
+
+    this.ctx.save();
+
+    if (this.recentNeighborHighlight.type === 'glow') {
+      // Create glow effect
+      this.ctx.shadowColor = this.recentNeighborHighlight.glowColor || '#8B7355';
+      this.ctx.shadowBlur = this.recentNeighborHighlight.glowRadius || 8;
+      this.ctx.globalAlpha = this.recentNeighborHighlight.glowOpacity || 0.6;
+
+      // Draw outer glow
+      this.ctx.beginPath();
+      if (shape === 'circle') {
+        this.ctx.arc(centerX, centerY, radius + 2, 0, Math.PI * 2);
+      } else {
+        const size = radius * 1.4 + 4;
+        const cornerRadius = size * 0.2;
+        this.drawRoundedRect(centerX - size/2, centerY - size/2, size, size, cornerRadius);
+      }
+      this.ctx.fillStyle = this.recentNeighborHighlight.glowColor || '#8B7355';
+      this.ctx.fill();
+
+      // Draw inner glow if specified
+      if (this.recentNeighborHighlight.innerGlowColor) {
+        this.ctx.shadowColor = this.recentNeighborHighlight.innerGlowColor;
+        this.ctx.shadowBlur = this.recentNeighborHighlight.innerGlowRadius || 4;
+        this.ctx.beginPath();
+        if (shape === 'circle') {
+          this.ctx.arc(centerX, centerY, radius + 1, 0, Math.PI * 2);
+        } else {
+          const size = radius * 1.4 + 2;
+          const cornerRadius = size * 0.2;
+          this.drawRoundedRect(centerX - size/2, centerY - size/2, size, size, cornerRadius);
+        }
+        this.ctx.fillStyle = this.recentNeighborHighlight.innerGlowColor;
+        this.ctx.fill();
+      }
+    } else if (this.recentNeighborHighlight.type === 'border') {
+      // Create border effect
+      this.ctx.strokeStyle = this.recentNeighborHighlight.borderColor || '#A0522D';
+      this.ctx.lineWidth = this.recentNeighborHighlight.borderWidth || 3;
+      this.ctx.globalAlpha = this.recentNeighborHighlight.borderOpacity || 0.9;
+
+      this.ctx.beginPath();
+      if (shape === 'circle') {
+        this.ctx.arc(centerX, centerY, radius + (this.recentNeighborHighlight.borderWidth || 3) / 2, 0, Math.PI * 2);
+      } else {
+        const size = radius * 1.4 + (this.recentNeighborHighlight.borderWidth || 3);
+        const cornerRadius = size * 0.2;
+        this.drawRoundedRect(centerX - size/2, centerY - size/2, size, size, cornerRadius);
+      }
+      this.ctx.stroke();
+    } else if (this.recentNeighborHighlight.type === 'square') {
+      // Highlight the entire grid square
+      const halfCell = this.cellSize / 2;
+      const squareX = centerX - halfCell;
+      const squareY = centerY - halfCell;
+      
+      // Draw background highlight
+      this.ctx.fillStyle = this.recentNeighborHighlight.backgroundColor || '#D4C4A8';
+      this.ctx.globalAlpha = this.recentNeighborHighlight.backgroundOpacity || 0.4;
+      this.ctx.fillRect(squareX, squareY, this.cellSize, this.cellSize);
+      
+      // Draw border highlight
+      if (this.recentNeighborHighlight.borderColor && (this.recentNeighborHighlight.borderWidth || 0) > 0) {
+        this.ctx.strokeStyle = this.recentNeighborHighlight.borderColor;
+        this.ctx.lineWidth = this.recentNeighborHighlight.borderWidth || 2;
+        this.ctx.globalAlpha = this.recentNeighborHighlight.borderOpacity || 0.6;
+        this.ctx.strokeRect(squareX, squareY, this.cellSize, this.cellSize);
+      }
+    }
+
+    this.ctx.restore();
   }
 
   clearConstraintWarnings() {

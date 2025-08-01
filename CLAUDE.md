@@ -61,3 +61,30 @@ This approach maintains a single evolving production codebase while preserving t
 
 **Git workflow:**
 - To back up and try again: `git add .claude/ && git commit && git reset --hard HEAD && git clean -fdn` (then probably `git clean -fd` to actually do it)
+
+## Beware
+
+**Common Failure Points and Bug Patterns:**
+
+**Re-rendering Issues:**
+- Canvas rendering is event-driven, not continuous - DOM manipulations (tooltips, modals) can trigger unexpected resize events causing render cycles
+- Modal dismissal handlers calling `render()` can recreate modals immediately if state persists
+- Use `setTimeout()` to defer DOM manipulation until after render cycle completes
+- Animation features require `requestAnimationFrame` loops vs. current event-driven approach
+
+**Grid Size and Responsive Behavior:**
+- Transition from wide to tall aspect ratios can break grid positioning calculations  
+- `MIN_CELL_SIZE` (44px) threshold determines scrollable vs. fitted behavior
+- Grid offset calculations assume static viewport - dynamic resizing needs recalculation
+- Mobile panning gestures can interfere with cell click detection on smaller grids
+
+**Dev Overlay System:**
+- Theme selector dropdown only appears if `devFeatures.themeSelector: true` is set in config
+- Inconsistent naming between config keys (e.g., `square-highlight`) and display names (`Square Highlight`)
+- DevOverlay CSS can conflict with main app styles - use scoped selectors
+- Config property names must match exactly between `config.js` and renderer update methods
+
+**Cross-Project Concept Naming:**
+- "Constraint Visualization Style" label used in dev overlay but refers to highlighting, forbidden squares, status bars, etc.
+- Theme variant keys use kebab-case, display names use Title Case - maintain consistency
+- Config object properties vary by issue type (`override`, `statusBarStyle`, `highlightStyle`) - document expected structure per issue type

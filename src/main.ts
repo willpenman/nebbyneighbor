@@ -139,6 +139,11 @@ function setupDevModeListeners(controller: GridController, devOverlay: DevOverla
       renderer.updateLineStyles(lineStyles);
     }
     
+    // Issue 18: Most recent neighbor highlighting
+    if (themeConfig?.highlightStyle) {
+      renderer.updateRecentNeighborHighlight(themeConfig.highlightStyle);
+    }
+    
     // Issue 8: Status bar styling
     if (themeConfig?.statusBarStyle) {
       const statusBar = controller.getStatusBar();

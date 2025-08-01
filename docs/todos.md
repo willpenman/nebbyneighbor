@@ -12,14 +12,13 @@
 
 ## Priority Queue
 
-- [ ] **Implement early warning system for unsolvable puzzle states using row/column constraint analysis** (#13)
+- [ ] **Fix bugs in early warning system (unlisted, see git commits from #13)** (#13)
 - [ ] **Detect and celebrate when exactly 2n neighbors placed without violations** (#9)
 - [ ] **Visualize new constraints and successes in inspect mode** (#15)
 - [ ] **Add placement preview for potential forbidden squares** (#16)
-- [ ] **Highlight most recently placed neighbor** (#18)
-- [ ] **Add working undo/redo buttons for neighbor placement** (#10)
+- [ ] **Implement Canvas accessibility with DOM fallback and keyboard navigation** (#14)
 - [ ] **Add Playwright test suite with custom matchers** (#17)
 - [ ] **Display level selection interface** (#11)
 - [ ] **Create one-time conversion tool from extremely compressed representation to puzzle data** (#12)
-- [ ] **Implement Canvas accessibility with DOM fallback and keyboard navigation** (#14)
 - [ ] **Fix responsive viewport clipping in narrow aspect ratios** (#19)
+- [ ] **Add working undo/redo buttons for neighbor placement** (#10) - close issue - not needed?

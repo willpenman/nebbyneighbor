@@ -8,6 +8,7 @@ export type GridState = {
   neighbors: Set<string>;
   prePlacedNeighbors: Set<string>;
   forbiddenSquares: Set<string>;
+  moveHistory: GridPosition[];
   constraintWarning?: {
     overConstrainedRows: number[];
     overConstrainedColumns: number[];
@@ -39,5 +40,11 @@ export function createGridState(size: number): GridState {
     neighbors: new Set(),
     prePlacedNeighbors: new Set(),
     forbiddenSquares: new Set(),
+    moveHistory: [],
   };
+}
+
+export function getMostRecentNeighbor(gridState: GridState): GridPosition | null {
+  if (gridState.moveHistory.length === 0) return null;
+  return gridState.moveHistory[gridState.moveHistory.length - 1];
 }
