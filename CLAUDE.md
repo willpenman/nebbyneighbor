@@ -10,6 +10,34 @@ We plan to use the Playwright MCP for web actions including visual testing, clic
 
 For mobile testing, use `npm run dev -- --host` to expose the development server to the local network. The server is configured with `allowedHosts: ['wills-macbook-pro-6.local']` for Will's phone access.
 
+## Design Tests
+
+The project uses a systematic issue-based design exploration system:
+
+**Issue Configuration Structure:**
+Each `docs/development/issue-N/config.js` exports an `issueConfig` object with:
+- `title` - Issue description
+- `description` - Brief explanation of what's being tested
+- `themeVariants` - Object mapping variant keys to theme configurations
+- `defaultTheme` - Initial variant selection
+- `testPuzzle` - Puzzle configuration for testing
+- `devFeatures` - Flags for dev overlay UI elements
+
+**Development Overlay Flow:**
+1. URL parameter `?issue=N` triggers dev mode in `main.ts`
+2. `DevOverlay` class dynamically imports the issue config
+3. Dev UI is injected with theme selectors and controls
+4. Theme changes dispatch `dev-theme-change` events
+5. Main app listens for events and applies changes via renderer methods - as more issues are addressed, additional work may be required in the main app to configure new types of overrides
+
+**Archive Structure:**
+`docs/development/issue-N/` preserves design choices as:
+- `config.js` - Testable theme variants
+- Screenshots documenting the exploration process
+- No redundant HTML files (configs are applied dynamically)
+
+This approach maintains a single evolving production codebase while preserving the full design exploration history.
+
 ## For Will
 
 **Development commands:**
@@ -19,8 +47,7 @@ For mobile testing, use `npm run dev -- --host` to expose the development server
 - `npm run preview` - Preview production build locally
 
 **Issue-specific testing:**
-- `http://localhost:3000?issue=N` - Load specific issue configuration (N=2-7 available)
-- `http://localhost:3000/src/dev/index-N.html` - Direct access to issue dev page
+- `http://localhost:3000?issue=N` - Load specific issue configuration
 
-**Project structure:**
-- `docs/development/` - Development artifacts, screenshots, and issue documentation
+**Git workflow:**
+- To back up and try again: `git add .claude/ && git commit && git reset --hard HEAD && git clean -fdn` (then probably `git clean -fd` to actually do it)

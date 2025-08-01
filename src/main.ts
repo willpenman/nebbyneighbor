@@ -80,23 +80,53 @@ function setupDevModeListeners(controller: GridController, devOverlay: DevOverla
     const { themeKey, themeConfig } = event.detail;
     console.log('Dev theme change:', themeKey, themeConfig);
     
-    // Apply theme to renderer
     const renderer = controller.getRenderer();
-    if (renderer && themeConfig?.forbiddenSquareStyle) {
-      // Update renderer with forbidden square style and line styles
+    if (!renderer) return;
+    
+    // Handle different types of theme overrides
+    if (themeConfig?.override) {
+      const override = themeConfig.override;
+      
+      // Issue 2: Basic color overrides
+      if (override.backgroundColor || override.gridLineColor || override.neighborColor) {
+        renderer.updateThemeColors({
+          backgroundColor: override.backgroundColor,
+          gridLineColor: override.gridLineColor,
+          neighborColor: override.neighborColor
+        });
+      }
+      
+      // Issue 4: Pre-placed neighbor styling
+      if (override.prePlacedNeighborStyle) {
+        renderer.updatePrePlacedStyle(override.prePlacedNeighborStyle);
+      }
+    }
+    
+    // Issue 5: Grid size changes
+    if (themeConfig?.gridSize) {
+      const newPuzzle = {
+        ...devConfig.testPuzzle,
+        size: themeConfig.gridSize,
+        id: `${themeConfig.gridSize}x${themeConfig.gridSize}-size-test`
+      };
+      controller.loadPuzzle(newPuzzle);
+      devOverlay.updateDebugInfo(`Grid: ${themeConfig.gridSize}×${themeConfig.gridSize}, Pre-placed: ${newPuzzle.prePlacedNeighbors?.length || 0}`);
+      return; // Exit early since we're reloading the puzzle
+    }
+    
+    // Issue 6-7: Forbidden square style and constraint lines
+    if (themeConfig?.forbiddenSquareStyle) {
       renderer.updateForbiddenSquareStyle(themeConfig.forbiddenSquareStyle);
       
       // Update constraint line styles if they exist
-      if (themeConfig.forbiddenSquareStyle) {
-        const lineStyles = {
-          solidLineColor: themeConfig.forbiddenSquareStyle.solidLineColor || '#8B7355',
-          dashedLineColor: themeConfig.forbiddenSquareStyle.dashedLineColor || '#A67C5A',
-          lineWidth: themeConfig.forbiddenSquareStyle.lineWidth || 2,
-          dashPattern: themeConfig.forbiddenSquareStyle.dashPattern || [6, 4],
-          opacity: themeConfig.forbiddenSquareStyle.opacity || 0.9
-        };
-        renderer.updateLineStyles(lineStyles);
-      }
+      const lineStyles = {
+        solidLineColor: themeConfig.forbiddenSquareStyle.solidLineColor || '#8B7355',
+        dashedLineColor: themeConfig.forbiddenSquareStyle.dashedLineColor || '#A67C5A',
+        lineWidth: themeConfig.forbiddenSquareStyle.lineWidth || 2,
+        dashPattern: themeConfig.forbiddenSquareStyle.dashPattern || [6, 4],
+        opacity: themeConfig.forbiddenSquareStyle.opacity || 0.9
+      };
+      renderer.updateLineStyles(lineStyles);
     }
     
     devOverlay.updateDebugInfo(`Theme: ${themeKey} applied`);

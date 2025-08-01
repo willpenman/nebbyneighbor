@@ -596,4 +596,32 @@ export class GridRenderer {
     // Re-render with new style
     this.render();
   }
+
+  updateThemeColors(colorConfig: {
+    backgroundColor?: string;
+    gridLineColor?: string;
+    neighborColor?: string;
+  }) {
+    // Update theme with new colors
+    this.theme = {
+      ...this.theme,
+      ...(colorConfig.backgroundColor && { backgroundColor: colorConfig.backgroundColor }),
+      ...(colorConfig.gridLineColor && { gridLineColor: colorConfig.gridLineColor }),
+      ...(colorConfig.neighborColor && { neighborColor: colorConfig.neighborColor })
+    };
+
+    // Re-render with new colors
+    this.render();
+  }
+
+  updatePrePlacedStyle(style: 'solid' | 'outline' | 'filled-outline') {
+    // Update theme with new pre-placed neighbor style
+    this.theme = {
+      ...this.theme,
+      prePlacedNeighborStyle: style
+    };
+
+    // Re-render with new style
+    this.render();
+  }
 }
