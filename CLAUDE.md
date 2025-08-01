@@ -23,6 +23,16 @@ Each `docs/development/issue-N/config.js` exports an `issueConfig` object with:
 - `testPuzzle` - Puzzle configuration for testing
 - `devFeatures` - Flags for dev overlay UI elements
 
+**Theme Variants Structure:**
+Each theme variant should have:
+- `name` - Display name for dropdown (e.g., "Friendly Labels")
+- `description` - Explanation of the design approach
+- Theme-specific configuration object (varies by issue type):
+  - `override` - For renderer-based themes (colors, styling)
+  - `statusBarStyle` - For status bar themes (counterStyle, levelStyle, colors)
+  - `forbiddenSquareStyle` - For constraint visualization themes
+  - `gridSize` - For grid size variants
+
 **Development Overlay Flow:**
 1. URL parameter `?issue=N` triggers dev mode in `main.ts`
 2. `DevOverlay` class dynamically imports the issue config
