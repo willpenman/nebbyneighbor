@@ -1,11 +1,13 @@
 import { GridState, GridPosition, positionToKey, createGridState } from '../types/grid.js';
 import { GridRenderer } from '../ui/GridRenderer.js';
+import { StatusBar } from '../ui/StatusBar.js';
 import { PuzzleConfig, PuzzleState } from '../types/puzzle.js';
 import { LineDetector, InspectionData, ForbiddenSquareInfo } from './LineDetector.js';
 
 export class GridController {
   private gridState: GridState;
   private renderer: GridRenderer;
+  private statusBar: StatusBar;
   private canvas: HTMLCanvasElement;
   private puzzleState: PuzzleState | null = null;
   private lineDetector: LineDetector;
@@ -14,6 +16,7 @@ export class GridController {
     this.gridState = createGridState(size);
     this.canvas = canvas;
     this.renderer = new GridRenderer(canvas, this.gridState);
+    this.statusBar = new StatusBar();
     this.lineDetector = new LineDetector(size);
     
     this.setupEventListeners();
@@ -88,6 +91,7 @@ export class GridController {
     const key = positionToKey(position);
     this.gridState.neighbors.add(key);
     this.updateForbiddenSquares();
+    this.updateStatusBar();
     
     // Automatically enter inspection mode for newly placed neighbor
     this.enterNeighborInspectMode(position);
@@ -97,6 +101,7 @@ export class GridController {
     const key = positionToKey(position);
     this.gridState.neighbors.delete(key);
     this.updateForbiddenSquares();
+    this.updateStatusBar();
     this.clearInspectMode();
     this.render();
   }
@@ -130,6 +135,18 @@ export class GridController {
     ]);
     
     this.gridState.forbiddenSquares = this.lineDetector.calculateForbiddenSquares(allNeighbors);
+  }
+  
+  private updateStatusBar() {
+    if (!this.puzzleState) return;
+    
+    const playerPlacedCount = this.gridState.neighbors.size;
+    const remainingNeighbors = this.statusBar.calculateRemainingNeighbors(
+      this.puzzleState.config,
+      playerPlacedCount
+    );
+    
+    this.statusBar.updateCounter(remainingNeighbors, this.puzzleState.config.size * 2);
   }
   
   private render() {
@@ -178,7 +195,11 @@ export class GridController {
       isComplete: false
     };
     
+    // Update status bar with new puzzle
+    this.statusBar.updateLevel(puzzleConfig);
+    
     this.updateForbiddenSquares();
+    this.updateStatusBar();
     this.clearInspectMode();
   }
   
@@ -214,5 +235,9 @@ export class GridController {
   
   getRenderer(): GridRenderer {
     return this.renderer;
+  }
+  
+  getStatusBar(): StatusBar {
+    return this.statusBar;
   }
 }

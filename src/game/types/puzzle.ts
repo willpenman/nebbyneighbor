@@ -9,6 +9,7 @@ export type PuzzleConfig = {
   metadata: {
     symmetryClass: SymmetryClass;
     difficulty?: number;
+    index?: number;
   };
 };
 

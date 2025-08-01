@@ -30,13 +30,17 @@ async function initializeGame() {
   canvas.setAttribute('role', 'application');
   canvas.setAttribute('aria-label', '8x8 grid puzzle - click cells to place neighbors');
   
-  gameContainer.innerHTML = '';
+  // Only clear canvas if it already exists, preserve status bar
+  const existingCanvas = gameContainer.querySelector('#game-canvas');
+  if (existingCanvas) {
+    existingCanvas.remove();
+  }
   gameContainer.appendChild(canvas);
   
   try {
     // Use dev config puzzle if available, otherwise default
     const puzzle = devConfig?.testPuzzle || {
-      id: '8x8-test',
+      id: 'default-8x8-test-puzzle',
       size: 8,
       prePlacedNeighbors: [
         { row: 7, col: 1 },
@@ -44,7 +48,8 @@ async function initializeGame() {
         { row: 4, col: 3 }
       ],
       metadata: {
-        symmetryClass: 'iden' as const
+        symmetryClass: 'iden' as const,
+        index: 1
       }
     };
 
@@ -127,6 +132,30 @@ function setupDevModeListeners(controller: GridController, devOverlay: DevOverla
         opacity: themeConfig.forbiddenSquareStyle.opacity || 0.9
       };
       renderer.updateLineStyles(lineStyles);
+    }
+    
+    // Issue 8: Status bar styling
+    if (themeConfig?.statusBarStyle) {
+      const statusBar = controller.getStatusBar();
+      statusBar.updateStyle({
+        counterStyle: themeConfig.statusBarStyle.counterStyle,
+        levelStyle: themeConfig.statusBarStyle.levelStyle,
+        backgroundColor: themeConfig.statusBarStyle.backgroundColor,
+        borderColor: themeConfig.statusBarStyle.borderColor,
+        textColor: themeConfig.statusBarStyle.textColor
+      });
+      
+      // Trigger a status bar update to refresh with new styles
+      const gridState = controller.getGridState();
+      const playerPlacedCount = gridState.neighbors.size;
+      const puzzleState = controller.getPuzzleState();
+      if (puzzleState) {
+        const remainingNeighbors = statusBar.calculateRemainingNeighbors(
+          puzzleState.config,
+          playerPlacedCount
+        );
+        statusBar.updateCounter(remainingNeighbors, puzzleState.config.size * 2);
+      }
     }
     
     devOverlay.updateDebugInfo(`Theme: ${themeKey} applied`);

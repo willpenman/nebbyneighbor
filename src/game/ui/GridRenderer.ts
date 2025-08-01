@@ -44,14 +44,17 @@ export class GridRenderer {
   
   private setupCanvas() {
     const dpr = window.devicePixelRatio || 1;
+    
+    // Force layout recalculation
+    this.canvas.offsetWidth;
+    
     const rect = this.canvas.getBoundingClientRect();
     
     this.canvas.width = rect.width * dpr;
     this.canvas.height = rect.height * dpr;
     
     this.ctx.scale(dpr, dpr);
-    this.canvas.style.width = rect.width + 'px';
-    this.canvas.style.height = rect.height + 'px';
+    // Don't set explicit pixel dimensions - let CSS handle responsive sizing
   }
   
   private calculateDimensions() {
