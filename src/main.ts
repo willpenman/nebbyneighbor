@@ -1,7 +1,12 @@
 import { GridController } from './game/engine/GridController.js';
 import { DevOverlay } from './dev/DevOverlay.js';
+import { getDefaultPuzzle, getPuzzleByIndex, getPuzzleCount } from './game/data/puzzleCatalog.js';
 
 console.log('Nebby Neighbor game initializing...');
+
+// Level navigation state
+let currentLevelIndex = 0;
+let currentController: GridController | null = null;
 
 // Check for dev mode via URL parameter
 const urlParams = new URLSearchParams(window.location.search);
@@ -28,7 +33,6 @@ async function initializeGame() {
   const canvas = document.createElement('canvas');
   canvas.id = 'game-canvas';
   canvas.setAttribute('role', 'application');
-  canvas.setAttribute('aria-label', '8x8 grid puzzle - click cells to place neighbors');
   
   // Only clear canvas if it already exists, preserve status bar
   const existingCanvas = gameContainer.querySelector('#game-canvas');
@@ -38,23 +42,15 @@ async function initializeGame() {
   gameContainer.appendChild(canvas);
   
   try {
-    // Use dev config puzzle if available, otherwise default
-    const puzzle = devConfig?.testPuzzle || {
-      id: 'default-8x8-test-puzzle',
-      size: 8,
-      prePlacedNeighbors: [
-        { row: 7, col: 1 },
-        { row: 3, col: 4 },
-        { row: 4, col: 3 }
-      ],
-      metadata: {
-        symmetryClass: 'iden' as const,
-        index: 1
-      }
-    };
+    // Use dev config puzzle if available, otherwise use default from catalog (4x4)
+    const puzzle = devConfig?.testPuzzle || getDefaultPuzzle();
+    
+    // Set dynamic accessibility label
+    canvas.setAttribute('aria-label', `${puzzle.size}x${puzzle.size} grid puzzle - click cells to place neighbors`);
 
     const controller = new GridController(canvas, puzzle.size);
     controller.loadPuzzle(puzzle);
+    currentController = controller;
     
     // Set up dev mode event listeners
     if (devOverlay && devConfig) {
@@ -64,6 +60,11 @@ async function initializeGame() {
     console.log('Grid controller initialized with puzzle:', puzzle.id);
     if (devOverlay) {
       devOverlay.updateDebugInfo(`Grid: ${puzzle.size}×${puzzle.size}, Pre-placed: ${puzzle.prePlacedNeighbors.length}`);
+    }
+    
+    // Create navigation buttons if not in dev mode
+    if (!devOverlay) {
+      createNavigationButtons();
     }
     
   } catch (error) {
@@ -176,6 +177,127 @@ function setupDevModeListeners(controller: GridController, devOverlay: DevOverla
     controller.loadPuzzle(devConfig.testPuzzle);
     devOverlay.updateDebugInfo('Puzzle reset to initial state');
   });
+}
+
+function createNavigationButtons() {
+  const app = document.getElementById('app');
+  if (!app) return;
+  
+  // Remove existing navigation if it exists
+  const existingNav = document.getElementById('level-navigation');
+  if (existingNav) {
+    existingNav.remove();
+  }
+  
+  // Create navigation container
+  const navContainer = document.createElement('div');
+  navContainer.id = 'level-navigation';
+  navContainer.style.cssText = `
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    flex-shrink: 0;
+  `;
+  
+  // Back button
+  const backButton = document.createElement('button');
+  backButton.textContent = '← Back';
+  backButton.style.cssText = `
+    padding: 0.5rem 1rem;
+    background: #8B7355;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+  `;
+  backButton.addEventListener('click', goToPreviousLevel);
+  backButton.addEventListener('mouseenter', () => {
+    backButton.style.backgroundColor = '#6d5a43';
+  });
+  backButton.addEventListener('mouseleave', () => {
+    backButton.style.backgroundColor = '#8B7355';
+  });
+  
+  // Forward button
+  const forwardButton = document.createElement('button');
+  forwardButton.textContent = 'Forward →';
+  forwardButton.style.cssText = `
+    padding: 0.5rem 1rem;
+    background: #8B7355;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+  `;
+  forwardButton.addEventListener('click', goToNextLevel);
+  forwardButton.addEventListener('mouseenter', () => {
+    forwardButton.style.backgroundColor = '#6d5a43';
+  });
+  forwardButton.addEventListener('mouseleave', () => {
+    forwardButton.style.backgroundColor = '#8B7355';
+  });
+  
+  navContainer.appendChild(backButton);
+  navContainer.appendChild(forwardButton);
+  
+  // Add navigation after the main game container
+  const gameContainer = document.getElementById('game-container');
+  if (gameContainer && gameContainer.parentNode) {
+    gameContainer.parentNode.insertBefore(navContainer, gameContainer.nextSibling);
+  }
+  
+  updateNavigationVisibility();
+}
+
+function updateNavigationVisibility() {
+  const navContainer = document.getElementById('level-navigation');
+  if (!navContainer) return;
+  
+  const backButton = navContainer.children[0] as HTMLButtonElement;
+  const forwardButton = navContainer.children[1] as HTMLButtonElement;
+  
+  // Hide back button if on first level
+  backButton.style.visibility = currentLevelIndex === 0 ? 'hidden' : 'visible';
+  
+  // Hide forward button if on last level
+  forwardButton.style.visibility = currentLevelIndex === getPuzzleCount() - 1 ? 'hidden' : 'visible';
+}
+
+function goToPreviousLevel() {
+  if (currentLevelIndex > 0) {
+    currentLevelIndex--;
+    loadCurrentLevel();
+  }
+}
+
+function goToNextLevel() {
+  if (currentLevelIndex < getPuzzleCount() - 1) {
+    currentLevelIndex++;
+    loadCurrentLevel();
+  }
+}
+
+function loadCurrentLevel() {
+  const puzzle = getPuzzleByIndex(currentLevelIndex);
+  if (!puzzle || !currentController) return;
+  
+  // Update canvas accessibility label
+  const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
+  if (canvas) {
+    canvas.setAttribute('aria-label', `${puzzle.size}x${puzzle.size} grid puzzle - click cells to place neighbors`);
+  }
+  
+  // Load puzzle (this handles size changes automatically)
+  currentController.loadPuzzle(puzzle);
+  
+  updateNavigationVisibility();
+  console.log(`Loaded level ${currentLevelIndex + 1}: ${puzzle.id}`);
 }
 
 // Initialize the game

@@ -4,6 +4,13 @@
 
 This project uses `gh` CLI for GitHub operations and repository management.
 
+**Puzzle Configuration:**
+- Puzzle definitions are stored in `src/game/data/puzzleCatalog.ts`
+- Current catalog includes 4x4, 5x5, and 8x8 puzzles in difficulty order
+- Each puzzle has: id, size, prePlacedNeighbors array, and metadata
+- Helper functions: `getDefaultPuzzle()`, `getPuzzleByIndex()`, `getPuzzleCount()`, `getPuzzleIndex()`
+- Level navigation system automatically loads puzzles from catalog in sequence
+
 We plan to use the Playwright MCP for web actions including visual testing, clicking interactions, and screenshot/PDF generation during development and testing phases.
 
 **Playwright MCP Fix:** If you encounter "Browser is already in use" errors, use `npx -y @playwright/mcp@v0.0.31` to install the previous version which resolves the issue.

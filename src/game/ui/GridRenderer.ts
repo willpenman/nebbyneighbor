@@ -569,7 +569,15 @@ export class GridRenderer {
   }
   
   updateGridState(newState: GridState) {
+    const oldSize = this.gridState.size;
     this.gridState = newState;
+    
+    // If grid size changed, recalculate dimensions
+    if (oldSize !== newState.size) {
+      console.log(`Grid size changed from ${oldSize}×${oldSize} to ${newState.size}×${newState.size}, recalculating dimensions`);
+      this.calculateDimensions();
+    }
+    
     this.render();
   }
   
