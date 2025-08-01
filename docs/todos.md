@@ -12,7 +12,6 @@
 
 ## Priority Queue
 
-- [ ] **Display remaining neighbors counter and level identifier** (#8)
 - [ ] **Implement early warning system for unsolvable puzzle states using row/column constraint analysis** (#13)
 - [ ] **Detect and celebrate when exactly 2n neighbors placed without violations** (#9)
 - [ ] **Visualize new constraints and successes in inspect mode** (#15)
@@ -23,3 +22,4 @@
 - [ ] **Display level selection interface** (#11)
 - [ ] **Create one-time conversion tool from extremely compressed representation to puzzle data** (#12)
 - [ ] **Implement Canvas accessibility with DOM fallback and keyboard navigation** (#14)
+- [ ] **Fix responsive viewport clipping in narrow aspect ratios** (#19)

@@ -2,7 +2,7 @@ import { GridState, GridPosition, positionToKey, createGridState } from '../type
 import { GridRenderer } from '../ui/GridRenderer.js';
 import { StatusBar } from '../ui/StatusBar.js';
 import { PuzzleConfig, PuzzleState } from '../types/puzzle.js';
-import { LineDetector, InspectionData, ForbiddenSquareInfo } from './LineDetector.js';
+import { LineDetector, InspectionData, ForbiddenSquareInfo, ConstraintAnalysis } from './LineDetector.js';
 
 export class GridController {
   private gridState: GridState;
@@ -135,6 +135,22 @@ export class GridController {
     ]);
     
     this.gridState.forbiddenSquares = this.lineDetector.calculateForbiddenSquares(allNeighbors);
+    
+    // Analyze row/column constraints for unsolvable states
+    const constraintAnalysis = this.lineDetector.analyzeRowColumnConstraints(
+      allNeighbors,
+      this.gridState.forbiddenSquares
+    );
+    
+    // Update constraint warning state
+    if (constraintAnalysis.hasUnsolvableState) {
+      this.gridState.constraintWarning = {
+        overConstrainedRows: constraintAnalysis.overConstrainedRows,
+        overConstrainedColumns: constraintAnalysis.overConstrainedColumns
+      };
+    } else {
+      this.gridState.constraintWarning = undefined;
+    }
   }
   
   private updateStatusBar() {

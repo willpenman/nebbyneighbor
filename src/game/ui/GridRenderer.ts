@@ -245,6 +245,7 @@ export class GridRenderer {
     this.drawForbiddenSquares();
     this.drawNeighbors();
     this.drawConstraintLines();
+    this.drawConstraintWarnings();
   }
   
   private clear() {
@@ -626,5 +627,56 @@ export class GridRenderer {
 
     // Re-render with new style
     this.render();
+  }
+  
+  private drawConstraintWarnings() {
+    // Clean up any existing DOM warnings first
+    const existingWarning = document.getElementById('constraint-warning-indicator');
+    if (existingWarning) {
+      existingWarning.remove();
+    }
+    
+    if (!this.gridState.constraintWarning) return;
+    
+    const { overConstrainedRows, overConstrainedColumns } = this.gridState.constraintWarning;
+    
+    // Back to canvas-based rendering, but draw it VERY LAST
+    if (overConstrainedRows.length > 0 || overConstrainedColumns.length > 0) {
+      this.drawCanvasWarningIndicator();
+    }
+  }
+  
+  private drawCanvasWarningIndicator() {
+    // Save the current canvas state
+    this.ctx.save();
+    
+    // Position on the left side where we know it's visible
+    const indicatorSize = 32;
+    const x = 16; // Safe margin from left edge
+    const y = 60; // Below any potential header content
+    
+    // Draw warning triangle with organic theme colors
+    this.ctx.fillStyle = '#D2691E'; // Warm orange warning
+    this.ctx.beginPath();
+    this.ctx.moveTo(x + indicatorSize / 2, y);
+    this.ctx.lineTo(x, y + indicatorSize);
+    this.ctx.lineTo(x + indicatorSize, y + indicatorSize);
+    this.ctx.closePath();
+    this.ctx.fill();
+    
+    // Add a subtle border for definition
+    this.ctx.strokeStyle = '#8B7355'; // Organic brown border
+    this.ctx.lineWidth = 2;
+    this.ctx.stroke();
+    
+    // Draw exclamation mark
+    this.ctx.fillStyle = '#faf7f2'; // Light text for contrast
+    this.ctx.font = 'bold 18px sans-serif';
+    this.ctx.textAlign = 'center';
+    this.ctx.textBaseline = 'middle';
+    this.ctx.fillText('!', x + indicatorSize / 2, y + indicatorSize * 0.7);
+    
+    // Restore canvas state
+    this.ctx.restore();
   }
 }

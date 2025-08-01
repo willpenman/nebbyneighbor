@@ -30,6 +30,21 @@ export type ForbiddenSquareInfo = {
   causedBy: ConstraintRelationship[];
 };
 
+export type RowColumnConstraint = {
+  type: 'row' | 'column';
+  index: number;
+  placedCount: number;
+  availableCount: number;
+  isOverConstrained: boolean;
+};
+
+export type ConstraintAnalysis = {
+  overConstrainedRows: number[];
+  overConstrainedColumns: number[];
+  allConstraints: RowColumnConstraint[];
+  hasUnsolvableState: boolean;
+};
+
 export class LineDetector {
   constructor(private gridSize: number) {}
   
@@ -275,6 +290,96 @@ export class LineDetector {
       position: forbiddenSquare,
       causedBy
     };
+  }
+
+  /**
+   * Analyze row and column constraints to detect unsolvable states
+   * Based on the 2n mathematical limit (max 2 neighbors per row/column)
+   */
+  analyzeRowColumnConstraints(allNeighbors: Set<string>, forbiddenSquares: Set<string>): ConstraintAnalysis {
+    const neighborPositions = Array.from(allNeighbors).map(key => {
+      const [row, col] = key.split(',').map(Number);
+      return { row, col };
+    });
+    
+    const overConstrainedRows: number[] = [];
+    const overConstrainedColumns: number[] = [];
+    const allConstraints: RowColumnConstraint[] = [];
+    
+    // Analyze each row
+    for (let row = 0; row < this.gridSize; row++) {
+      const placedCount = neighborPositions.filter(pos => pos.row === row).length;
+      const availableCount = this.countAvailableSquaresInRow(row, allNeighbors, forbiddenSquares);
+      const totalPossible = placedCount + availableCount;
+      const isOverConstrained = totalPossible < 2;
+      
+      if (isOverConstrained) {
+        overConstrainedRows.push(row);
+      }
+      
+      allConstraints.push({
+        type: 'row',
+        index: row,
+        placedCount,
+        availableCount,
+        isOverConstrained
+      });
+    }
+    
+    // Analyze each column
+    for (let col = 0; col < this.gridSize; col++) {
+      const placedCount = neighborPositions.filter(pos => pos.col === col).length;
+      const availableCount = this.countAvailableSquaresInColumn(col, allNeighbors, forbiddenSquares);
+      const totalPossible = placedCount + availableCount;
+      const isOverConstrained = totalPossible < 2;
+      
+      if (isOverConstrained) {
+        overConstrainedColumns.push(col);
+      }
+      
+      allConstraints.push({
+        type: 'column',
+        index: col,
+        placedCount,
+        availableCount,
+        isOverConstrained
+      });
+    }
+    
+    return {
+      overConstrainedRows,
+      overConstrainedColumns,
+      allConstraints,
+      hasUnsolvableState: overConstrainedRows.length > 0 || overConstrainedColumns.length > 0
+    };
+  }
+  
+  /**
+   * Count available (non-forbidden, non-occupied) squares in a specific row
+   */
+  private countAvailableSquaresInRow(row: number, allNeighbors: Set<string>, forbiddenSquares: Set<string>): number {
+    let count = 0;
+    for (let col = 0; col < this.gridSize; col++) {
+      const key = positionToKey({ row, col });
+      if (!allNeighbors.has(key) && !forbiddenSquares.has(key)) {
+        count++;
+      }
+    }
+    return count;
+  }
+  
+  /**
+   * Count available (non-forbidden, non-occupied) squares in a specific column
+   */
+  private countAvailableSquaresInColumn(col: number, allNeighbors: Set<string>, forbiddenSquares: Set<string>): number {
+    let count = 0;
+    for (let row = 0; row < this.gridSize; row++) {
+      const key = positionToKey({ row, col });
+      if (!allNeighbors.has(key) && !forbiddenSquares.has(key)) {
+        count++;
+      }
+    }
+    return count;
   }
 
   /**
