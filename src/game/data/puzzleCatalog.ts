@@ -11,7 +11,8 @@ export const PUZZLE_CATALOG: PuzzleConfig[] = [
       { row: 3, col: 3 }
     ],
     metadata: {
-      symmetryClass: 'iden'
+      symmetryClass: 'iden',
+      index: 1
     }
   },
   
@@ -24,7 +25,8 @@ export const PUZZLE_CATALOG: PuzzleConfig[] = [
       { row: 2, col: 4 }
     ],
     metadata: {
-      symmetryClass: 'iden'
+      symmetryClass: 'iden',
+      index: 2
     }
   },
   
@@ -38,7 +40,8 @@ export const PUZZLE_CATALOG: PuzzleConfig[] = [
       { row: 4, col: 3 }
     ],
     metadata: {
-      symmetryClass: 'iden'
+      symmetryClass: 'iden',
+      index: 10
     }
   }
 ];

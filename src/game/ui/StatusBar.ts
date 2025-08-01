@@ -34,30 +34,26 @@ export class StatusBar {
     }
   }
   
-  updateCounter(remainingCount: number, _totalNeeded: number) {
+  updateCounter(remainingCount: number, totalNeeded: number) {
     if (!this.counterElement) return;
-    
-    let displayText = '';
     
     switch (this.config.counterStyle) {
       case 'number-only':
-        displayText = remainingCount.toString();
+        this.counterElement.innerHTML = `<span style="font-weight: 600;">${remainingCount}</span><span style="font-weight: 400; opacity: 0.8;">/${totalNeeded}</span>`;
         break;
       case 'with-label':
         const noun = remainingCount === 1 ? 'neighbor' : 'neighbors';
-        displayText = `${remainingCount} ${noun} left`;
+        this.counterElement.innerHTML = `<span style="font-weight: 600;">${remainingCount}</span><span style="font-weight: 400; opacity: 0.8;">/${totalNeeded} ${noun} left</span>`;
         break;
       case 'with-icon':
-        displayText = `👥 ${remainingCount}`;
+        this.counterElement.innerHTML = `👥 <span style="font-weight: 600;">${remainingCount}</span><span style="font-weight: 400; opacity: 0.8;">/${totalNeeded}</span>`;
         break;
       default:
         // Fallback to with-label
         const defaultNoun = remainingCount === 1 ? 'neighbor' : 'neighbors';
-        displayText = `${remainingCount} ${defaultNoun} left`;
+        this.counterElement.innerHTML = `<span style="font-weight: 600;">${remainingCount}</span><span style="font-weight: 400; opacity: 0.8;">/${totalNeeded} ${defaultNoun} left</span>`;
         break;
     }
-    
-    this.counterElement.textContent = displayText;
   }
   
   updateLevel(puzzle: PuzzleConfig) {
