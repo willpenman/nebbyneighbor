@@ -2,7 +2,7 @@ import { GridState, GridPosition, positionToKey, createGridState } from '../type
 import { GridRenderer } from '../ui/GridRenderer.js';
 import { StatusBar } from '../ui/StatusBar.js';
 import { PuzzleConfig, PuzzleState } from '../types/puzzle.js';
-import { LineDetector, InspectionData, ForbiddenSquareInfo, ConstraintAnalysis } from './LineDetector.js';
+import { LineDetector, InspectionData, ForbiddenSquareInfo } from './LineDetector.js';
 
 export class GridController {
   private gridState: GridState;
@@ -88,6 +88,13 @@ export class GridController {
   }
   
   private placeNeighbor(position: GridPosition) {
+    // Check if there's already a constraint warning - prevent new placements
+    if (this.gridState.constraintWarning) {
+      // Show the modal again to remind player they need to resolve constraints first
+      this.render(); // This will trigger the modal to show again
+      return;
+    }
+    
     const key = positionToKey(position);
     this.gridState.neighbors.add(key);
     this.updateForbiddenSquares();

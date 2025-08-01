@@ -57,7 +57,7 @@ This approach maintains a single evolving production codebase while preserving t
 - `npm run preview` - Preview production build locally
 
 **Issue-specific testing:**
-- `http://localhost:3000?issue=N` - Load specific issue configuration
+- `http://localhost:3000/index.html?issue=N` - Load specific issue configuration
 
 **Git workflow:**
 - To back up and try again: `git add .claude/ && git commit && git reset --hard HEAD && git clean -fdn` (then probably `git clean -fd` to actually do it)

@@ -105,6 +105,11 @@ function setupDevModeListeners(controller: GridController, devOverlay: DevOverla
       if (override.prePlacedNeighborStyle) {
         renderer.updatePrePlacedStyle(override.prePlacedNeighborStyle);
       }
+      
+      // Issue 13: Warning style for constraint violations
+      if (override.warningStyle) {
+        renderer.updateWarningStyle(override.warningStyle);
+      }
     }
     
     // Issue 5: Grid size changes

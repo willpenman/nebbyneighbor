@@ -34,7 +34,7 @@ export class StatusBar {
     }
   }
   
-  updateCounter(remainingCount: number, totalNeeded: number) {
+  updateCounter(remainingCount: number, _totalNeeded: number) {
     if (!this.counterElement) return;
     
     let displayText = '';

@@ -25,6 +25,7 @@ export class GridRenderer {
   };
   private static readonly MIN_CELL_SIZE = 44; // WCAG 2.1 AA minimum 44×44px touch targets
   private isScrollable: boolean = false;
+  private warningStyle: string = 'headers'; // Default warning style
   
   constructor(canvas: HTMLCanvasElement, gridState: GridState) {
     this.canvas = canvas;
@@ -601,6 +602,18 @@ export class GridRenderer {
     this.render();
   }
 
+  updateWarningStyle(warningStyle: string) {
+    this.warningStyle = warningStyle;
+    this.render();
+  }
+
+  clearConstraintWarnings() {
+    const existingWarning = document.getElementById('constraint-warning-indicator');
+    if (existingWarning) {
+      existingWarning.remove();
+    }
+  }
+
   updateThemeColors(colorConfig: {
     backgroundColor?: string;
     gridLineColor?: string;
@@ -630,33 +643,146 @@ export class GridRenderer {
   }
   
   private drawConstraintWarnings() {
-    // Clean up any existing DOM warnings first
     const existingWarning = document.getElementById('constraint-warning-indicator');
-    if (existingWarning) {
-      existingWarning.remove();
-    }
     
-    if (!this.gridState.constraintWarning) return;
+    if (!this.gridState.constraintWarning) {
+      // No constraints - remove any existing warnings
+      if (existingWarning) {
+        existingWarning.remove();
+      }
+      return;
+    }
     
     const { overConstrainedRows, overConstrainedColumns } = this.gridState.constraintWarning;
     
-    // Back to canvas-based rendering, but draw it VERY LAST
     if (overConstrainedRows.length > 0 || overConstrainedColumns.length > 0) {
-      this.drawCanvasWarningIndicator();
+      // Only create warning if one doesn't already exist
+      if (!existingWarning) {
+        switch (this.warningStyle) {
+          case 'modal':
+            this.drawGameplayStoppingAlert(overConstrainedRows, overConstrainedColumns);
+            break;
+          case 'indicator':
+            this.drawWarningIndicator(overConstrainedRows, overConstrainedColumns);
+            break;
+          case 'headers':
+            this.drawSubtleRowColumnHeaders(overConstrainedRows, overConstrainedColumns);
+            break;
+          default:
+            this.drawWarningIndicator(overConstrainedRows, overConstrainedColumns);
+        }
+      }
+    } else {
+      // Constraints resolved - remove warning
+      if (existingWarning) {
+        existingWarning.remove();
+      }
     }
   }
   
-  private drawCanvasWarningIndicator() {
-    // Save the current canvas state
+  private drawGameplayStoppingAlert(overConstrainedRows: number[], overConstrainedColumns: number[]) {
+    // Create modal overlay that blocks interaction
+    const overlay = document.createElement('div');
+    overlay.id = 'constraint-warning-indicator';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(139, 115, 85, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      font-family: system-ui, sans-serif;
+    `;
+    
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      background: #faf7f2;
+      color: #5d4e37;
+      padding: 30px;
+      border-radius: 12px;
+      border: 3px solid #8B7355;
+      text-align: center;
+      max-width: 400px;
+      margin: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      position: relative;
+    `;
+    
+    const problemRows = overConstrainedRows.length > 0 ? `row${overConstrainedRows.length > 1 ? 's' : ''} ${overConstrainedRows.map(r => r + 1).join(', ')}` : '';
+    const problemCols = overConstrainedColumns.length > 0 ? `column${overConstrainedColumns.length > 1 ? 's' : ''} ${overConstrainedColumns.map(c => String.fromCharCode(65 + c)).join(', ')}` : '';
+    const problemAreas = [problemRows, problemCols].filter(Boolean).join(' and ');
+    
+    modal.innerHTML = `
+      <h3 style="margin: 0 0 15px 0; font-size: 1.3rem; color: #8B7355;">Puzzle Cannot Be Completed!</h3>
+      <p style="margin: 0 0 15px 0; line-height: 1.4;">Some ${problemAreas} cannot fit the required 2 neighbors.</p>
+      <p style="margin: 0 0 20px 0; font-style: italic; opacity: 0.8;">Try undoing your last move or reset the puzzle</p>
+      <button id="dismiss-warning" style="
+        background: #D2691E;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-size: 1rem;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background 0.2s;
+      " onmouseover="this.style.background='#B8601E'" onmouseout="this.style.background='#D2691E'">Continue Playing</button>
+    `;
+    
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    
+    // Add click handler to dismiss
+    const dismissButton = modal.querySelector('#dismiss-warning') as HTMLButtonElement;
+    if (dismissButton) {
+      dismissButton.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        overlay.remove();
+        // Don't call render() here - that would recreate the modal immediately
+        // The modal will only reappear if user tries to place another neighbor
+      });
+    }
+    
+    // Allow clicking outside to dismiss
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+        // Don't call render() here - that would recreate the modal immediately
+      }
+    });
+    
+    // Add escape key handler
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && document.body.contains(overlay)) {
+        overlay.remove();
+        // Don't call render() here - that would recreate the modal immediately
+        document.removeEventListener('keydown', handleEscape);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+  }
+  
+  private drawWarningIndicator(overConstrainedRows: number[], overConstrainedColumns: number[]) {
+    // Non-blocking warning indicator - current implementation enhanced
     this.ctx.save();
     
-    // Position on the left side where we know it's visible
+    // Position relative to the grid like the row/column headers do
     const indicatorSize = 32;
-    const x = 16; // Safe margin from left edge
-    const y = 60; // Below any potential header content
+    const offsetX = this.gridOffset.x + this.panOffset.x;
+    const offsetY = this.gridOffset.y + this.panOffset.y;
+    
+    // Position indicator to the left of the grid with some padding
+    // Ensure it's not positioned off-screen
+    const x = Math.max(10, offsetX - indicatorSize - 10);
+    const y = offsetY;
     
     // Draw warning triangle with organic theme colors
-    this.ctx.fillStyle = '#D2691E'; // Warm orange warning
+    this.ctx.fillStyle = '#D2691E';
     this.ctx.beginPath();
     this.ctx.moveTo(x + indicatorSize / 2, y);
     this.ctx.lineTo(x, y + indicatorSize);
@@ -665,18 +791,99 @@ export class GridRenderer {
     this.ctx.fill();
     
     // Add a subtle border for definition
-    this.ctx.strokeStyle = '#8B7355'; // Organic brown border
+    this.ctx.strokeStyle = '#8B7355';
     this.ctx.lineWidth = 2;
     this.ctx.stroke();
     
     // Draw exclamation mark
-    this.ctx.fillStyle = '#faf7f2'; // Light text for contrast
+    this.ctx.fillStyle = '#faf7f2';
     this.ctx.font = 'bold 18px sans-serif';
     this.ctx.textAlign = 'center';
     this.ctx.textBaseline = 'middle';
     this.ctx.fillText('!', x + indicatorSize / 2, y + indicatorSize * 0.7);
     
-    // Restore canvas state
+    this.ctx.restore();
+    
+    // Add hover tooltip functionality via DOM element
+    // Use setTimeout to avoid triggering immediate re-render
+    setTimeout(() => {
+      const tooltip = document.createElement('div');
+      tooltip.id = 'constraint-warning-indicator';
+      tooltip.style.cssText = `
+        position: absolute;
+        left: ${x}px;
+        top: ${y}px;
+        width: ${indicatorSize}px;
+        height: ${indicatorSize}px;
+        cursor: pointer;
+        z-index: 100;
+        pointer-events: none; /* Prevent any interaction events that might trigger re-renders */
+      `;
+      
+      const problemRows = overConstrainedRows.length > 0 ? `row${overConstrainedRows.length > 1 ? 's' : ''} ${overConstrainedRows.join(', ')}` : '';
+      const problemCols = overConstrainedColumns.length > 0 ? `column${overConstrainedColumns.length > 1 ? 's' : ''} ${overConstrainedColumns.join(', ')}` : '';
+      const problemAreas = [problemRows, problemCols].filter(Boolean).join(' and ');
+      
+      tooltip.title = `Warning: This puzzle state cannot be completed. Some ${problemAreas} cannot fit the required 2 neighbors.`;
+      
+      const canvasRect = this.canvas.getBoundingClientRect();
+      const tooltipLeft = canvasRect.left + x;
+      const tooltipTop = canvasRect.top + y;
+      tooltip.style.left = tooltipLeft + 'px';
+      tooltip.style.top = tooltipTop + 'px';
+      
+      document.body.appendChild(tooltip);
+    }, 0);
+  }
+  
+  private drawSubtleRowColumnHeaders(overConstrainedRows: number[], overConstrainedColumns: number[]) {
+    this.ctx.save();
+    
+    const gridSize = this.cellSize * this.gridState.size;
+    const offsetX = this.gridOffset.x + this.panOffset.x;
+    const offsetY = this.gridOffset.y + this.panOffset.y;
+    
+    // Highlight over-constrained rows
+    overConstrainedRows.forEach(rowIndex => {
+      const y = offsetY + rowIndex * this.cellSize;
+      
+      // Draw subtle background highlight
+      this.ctx.fillStyle = 'rgba(205, 133, 63, 0.2)'; // Sandy brown with transparency
+      this.ctx.fillRect(offsetX - 30, y, gridSize + 60, this.cellSize);
+      
+      // Draw row number indicator with pulsing effect
+      this.ctx.fillStyle = '#CD853F';
+      this.ctx.font = 'bold 14px sans-serif';
+      this.ctx.textAlign = 'center';
+      this.ctx.textBaseline = 'middle';
+      
+      // Left side indicator
+      this.ctx.fillText(`${rowIndex + 1}`, offsetX - 15, y + this.cellSize / 2);
+      // Right side indicator  
+      this.ctx.fillText(`${rowIndex + 1}`, offsetX + gridSize + 15, y + this.cellSize / 2);
+    });
+    
+    // Highlight over-constrained columns
+    overConstrainedColumns.forEach(colIndex => {
+      const x = offsetX + colIndex * this.cellSize;
+      
+      // Draw subtle background highlight
+      this.ctx.fillStyle = 'rgba(205, 133, 63, 0.2)';
+      this.ctx.fillRect(x, offsetY - 30, this.cellSize, gridSize + 60);
+      
+      // Draw column letter indicator
+      this.ctx.fillStyle = '#CD853F';
+      this.ctx.font = 'bold 14px sans-serif';
+      this.ctx.textAlign = 'center';
+      this.ctx.textBaseline = 'middle';
+      
+      const colLetter = String.fromCharCode(65 + colIndex); // A, B, C, etc.
+      // Top indicator
+      this.ctx.fillText(colLetter, x + this.cellSize / 2, offsetY - 15);
+      // Bottom indicator
+      this.ctx.fillText(colLetter, x + this.cellSize / 2, offsetY + gridSize + 15);
+    });
+    
     this.ctx.restore();
   }
 }

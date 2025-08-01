@@ -11,7 +11,7 @@ export const issueConfig = {
         showOverlay: true,
         blockInteraction: true,
         showUndoSuggestion: true,
-        backgroundColor: 'rgba(139, 115, 85, 0.9)', // Semi-transparent organic brown
+        modalBackgroundColor: 'rgba(139, 115, 85, 0.9)', // Semi-transparent organic brown for modal overlay only
         textColor: '#faf7f2',
         borderColor: '#8B7355',
         messageText: 'Puzzle cannot be completed! Some rows or columns cannot fit 2 neighbors.',
@@ -28,7 +28,7 @@ export const issueConfig = {
         blockInteraction: false,
         indicatorPosition: 'top-right',
         iconColor: '#D2691E', // Warm orange warning
-        backgroundColor: '#faf7f2',
+        tooltipBackgroundColor: '#faf7f2',
         textColor: '#5d4e37',
         borderColor: '#d4c4a8',
         messageText: 'Warning: This puzzle state cannot be completed',
@@ -72,6 +72,9 @@ export const issueConfig = {
   },
   
   devFeatures: {
+    themeSelector: true,
+    debugInfo: true,
+    resetButton: true,
     showConstraintInfo: true,
     showRowColumnAnalysis: true,
     logConstraintChanges: true,
