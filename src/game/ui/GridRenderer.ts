@@ -41,7 +41,7 @@ export class GridRenderer {
   } = {
     type: 'square',
     backgroundColor: '#A8D4A8',
-    backgroundOpacity: 0.3,
+    backgroundOpacity: 0.7,
     borderColor: null,
     borderWidth: 0,
     borderOpacity: 0
@@ -264,6 +264,7 @@ export class GridRenderer {
     this.drawBackground();
     this.drawGrid();
     this.drawForbiddenSquares();
+    this.drawForcedMoves();
     this.drawNeighbors();
     this.drawConstraintLines();
     this.drawConstraintWarnings();
@@ -380,6 +381,30 @@ export class GridRenderer {
       this.ctx.lineTo(x - i, y + this.cellSize);
     }
     this.ctx.stroke();
+  }
+
+  private drawForcedMoves() {
+    if (!this.gridState.forcedMoves || this.gridState.forcedMoves.size === 0) {
+      return;
+    }
+
+    this.ctx.save();
+    
+    // Use same light green as recent neighbor highlight for forced moves
+    const forcedMoveColor = '#A8D4A8'; // Same as recent neighbor highlight
+    
+    for (const forcedMoveKey of this.gridState.forcedMoves) {
+      const [row, col] = forcedMoveKey.split(',').map(Number);
+      const x = this.gridOffset.x + this.panOffset.x + (col * this.cellSize);
+      const y = this.gridOffset.y + this.panOffset.y + (row * this.cellSize);
+      
+      // Draw background highlight (same style as recent neighbor but less opaque)
+      this.ctx.fillStyle = forcedMoveColor;
+      this.ctx.globalAlpha = 0.3;
+      this.ctx.fillRect(x, y, this.cellSize, this.cellSize);
+    }
+    
+    this.ctx.restore();
   }
   
   private drawNeighbors() {

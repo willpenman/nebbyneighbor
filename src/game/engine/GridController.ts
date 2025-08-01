@@ -159,6 +159,10 @@ export class GridController {
     
     this.gridState.forbiddenSquares = this.lineDetector.calculateForbiddenSquares(allNeighbors);
     
+    // Calculate forced moves
+    const forcedMoves = this.lineDetector.detectForcedMoves(allNeighbors, this.gridState.forbiddenSquares);
+    this.gridState.forcedMoves = new Set(forcedMoves.map(positionToKey));
+    
     // Analyze row/column constraints for unsolvable states
     const constraintAnalysis = this.lineDetector.analyzeRowColumnConstraints(
       allNeighbors,
@@ -199,6 +203,7 @@ export class GridController {
       neighbors: new Set(this.gridState.neighbors),
       prePlacedNeighbors: new Set(this.gridState.prePlacedNeighbors),
       forbiddenSquares: new Set(this.gridState.forbiddenSquares),
+      forcedMoves: new Set(this.gridState.forcedMoves),
       moveHistory: [...this.gridState.moveHistory]
     };
   }

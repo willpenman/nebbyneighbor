@@ -383,6 +383,105 @@ export class LineDetector {
   }
 
   /**
+   * Get available squares in a specific row (extends countAvailableSquaresInRow to return positions)
+   */
+  private getAvailableSquaresInRow(row: number, allNeighbors: Set<string>, forbiddenSquares: Set<string>): GridPosition[] {
+    const available: GridPosition[] = [];
+    for (let col = 0; col < this.gridSize; col++) {
+      const key = positionToKey({ row, col });
+      if (!allNeighbors.has(key) && !forbiddenSquares.has(key)) {
+        available.push({ row, col });
+      }
+    }
+    return available;
+  }
+
+  /**
+   * Get available squares in a specific column (extends countAvailableSquaresInColumn to return positions)
+   */
+  private getAvailableSquaresInColumn(col: number, allNeighbors: Set<string>, forbiddenSquares: Set<string>): GridPosition[] {
+    const available: GridPosition[] = [];
+    for (let row = 0; row < this.gridSize; row++) {
+      const key = positionToKey({ row, col });
+      if (!allNeighbors.has(key) && !forbiddenSquares.has(key)) {
+        available.push({ row, col });
+      }
+    }
+    return available;
+  }
+
+  /**
+   * Detect forced moves: positions that must be filled to avoid unsolvable states
+   * 
+   * Forced moves occur when:
+   * - A row/column has 1 placed neighbor and only 1 available square (must fill that square)
+   * - A row/column has 0 placed neighbors and only 2 available squares (must fill both squares)
+   */
+  detectForcedMoves(allNeighbors: Set<string>, forbiddenSquares: Set<string>): GridPosition[] {
+    const neighborPositions = Array.from(allNeighbors).map(key => {
+      const [row, col] = key.split(',').map(Number);
+      return { row, col };
+    });
+
+    const forcedMoves: GridPosition[] = [];
+    const forcedMovesSet = new Set<string>();
+
+    // Check each row for forced moves
+    for (let row = 0; row < this.gridSize; row++) {
+      const placedCount = neighborPositions.filter(pos => pos.row === row).length;
+      const availableSquares = this.getAvailableSquaresInRow(row, allNeighbors, forbiddenSquares);
+      const availableCount = availableSquares.length;
+
+      // Case 1: 1 placed, 1 available -> must fill the available square
+      if (placedCount === 1 && availableCount === 1) {
+        const key = positionToKey(availableSquares[0]);
+        if (!forcedMovesSet.has(key)) {
+          forcedMoves.push(availableSquares[0]);
+          forcedMovesSet.add(key);
+        }
+      }
+      // Case 2: 0 placed, 2 available -> must fill both squares
+      else if (placedCount === 0 && availableCount === 2) {
+        for (const square of availableSquares) {
+          const key = positionToKey(square);
+          if (!forcedMovesSet.has(key)) {
+            forcedMoves.push(square);
+            forcedMovesSet.add(key);
+          }
+        }
+      }
+    }
+
+    // Check each column for forced moves
+    for (let col = 0; col < this.gridSize; col++) {
+      const placedCount = neighborPositions.filter(pos => pos.col === col).length;
+      const availableSquares = this.getAvailableSquaresInColumn(col, allNeighbors, forbiddenSquares);
+      const availableCount = availableSquares.length;
+
+      // Case 1: 1 placed, 1 available -> must fill the available square
+      if (placedCount === 1 && availableCount === 1) {
+        const key = positionToKey(availableSquares[0]);
+        if (!forcedMovesSet.has(key)) {
+          forcedMoves.push(availableSquares[0]);
+          forcedMovesSet.add(key);
+        }
+      }
+      // Case 2: 0 placed, 2 available -> must fill both squares
+      else if (placedCount === 0 && availableCount === 2) {
+        for (const square of availableSquares) {
+          const key = positionToKey(square);
+          if (!forcedMovesSet.has(key)) {
+            forcedMoves.push(square);
+            forcedMovesSet.add(key);
+          }
+        }
+      }
+    }
+
+    return forcedMoves;
+  }
+
+  /**
    * Calculate Greatest Common Divisor
    */
   private gcd(a: number, b: number): number {

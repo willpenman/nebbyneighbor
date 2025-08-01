@@ -8,6 +8,7 @@ export type GridState = {
   neighbors: Set<string>;
   prePlacedNeighbors: Set<string>;
   forbiddenSquares: Set<string>;
+  forcedMoves: Set<string>;
   moveHistory: GridPosition[];
   constraintWarning?: {
     overConstrainedRows: number[];
@@ -40,6 +41,7 @@ export function createGridState(size: number): GridState {
     neighbors: new Set(),
     prePlacedNeighbors: new Set(),
     forbiddenSquares: new Set(),
+    forcedMoves: new Set(),
     moveHistory: [],
   };
 }
