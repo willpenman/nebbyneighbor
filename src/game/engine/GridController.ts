@@ -19,6 +19,11 @@ export class GridController {
     this.canvas = canvas;
     this.renderer = new GridRenderer(canvas, this.gridState);
     this.statusBar = new StatusBar();
+    
+    // Set up callback to sync status bar width with grid width
+    this.renderer.setGridWidthCallback((width: number) => {
+      this.statusBar.setWidth(width);
+    });
     this.modal = new Modal();
     this.lineDetector = new LineDetector(size);
     
@@ -142,6 +147,7 @@ export class GridController {
     
     this.clearInspectMode();
     this.render();
+    
   }
   
   private checkWinCondition() {

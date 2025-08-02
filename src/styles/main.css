@@ -63,12 +63,10 @@ header h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 1rem;
   padding: 0.75rem 1rem;
   background-color: #faf7f2;
   border: 1px solid #d4c4a8;
-  border-radius: 8px;
-  max-width: var(--content-max-width);
+  border-radius: 8px 8px 0 0;
   margin-left: auto;
   margin-right: auto;
 }
@@ -91,9 +89,6 @@ header h1 {
 /* Game container */
 #game-container {
   flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);

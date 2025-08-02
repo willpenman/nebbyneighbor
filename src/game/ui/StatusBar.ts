@@ -118,4 +118,8 @@ export class StatusBar {
   show() {
     this.statusBarElement.style.display = 'flex';
   }
+  
+  setWidth(gridWidthPx: number) {
+    this.statusBarElement.style.width = `${gridWidthPx}px`;
+  }
 }

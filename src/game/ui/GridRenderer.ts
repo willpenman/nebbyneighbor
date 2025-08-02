@@ -16,6 +16,8 @@ export class GridRenderer {
   private panStartPoint: { x: number; y: number } | null = null;
   private panDistance: number = 0;
   private static readonly PAN_THRESHOLD = 10; // pixels
+  private gridWidth: number = 0;
+  private onGridWidthChange?: (width: number) => void;
   private lineStyles = {
     solidLineColor: '#8B7355',    // Soft organic default
     dashedLineColor: '#A67C5A',   // Companion shade
@@ -81,9 +83,13 @@ export class GridRenderer {
   private calculateDimensions() {
     const rect = this.canvas.getBoundingClientRect();
     // Use reasonable padding - minimal on mobile, larger on desktop
-    const padding = rect.width < 500 ? 2 : 40;
-    const availableWidth = rect.width - (padding * 2);
-    const availableHeight = rect.height - (padding * 2);
+    // No top padding since status bar is now directly adjacent
+    const sidePadding = rect.width < 500 ? 2 : 40;
+    const topPadding = 0; // Status bar touches grid directly
+    const bottomPadding = rect.width < 500 ? 2 : 40;
+    
+    const availableWidth = rect.width - (sidePadding * 2);
+    const availableHeight = rect.height - topPadding - bottomPadding;
     // Use minimum dimension to ensure grid fits completely in viewport
     const availableSpace = Math.min(availableWidth, availableHeight);
     
@@ -117,13 +123,21 @@ export class GridRenderer {
       this.gridOffset.x = Math.max(2, (rect.width - totalGridWidth) / 2);
       this.gridOffset.y = 20; // Always position at top for scrollable grids
     } else {
-      // For non-scrollable grids, center normally
+      // For non-scrollable grids, center horizontally but position at top since status bar is adjacent
       this.gridOffset.x = (rect.width - totalGridWidth) / 2;
-      this.gridOffset.y = (rect.height - totalGridHeight) / 2;
+      this.gridOffset.y = topPadding; // Position at top to touch status bar
     }
     
     // Set appropriate cursor
     this.canvas.style.cursor = this.isScrollable ? 'grab' : 'pointer';
+    
+    // Store grid width for external access (actual grid size, not canvas width)
+    this.gridWidth = this.cellSize * this.gridState.size;
+    
+    // Notify callback if grid width changed
+    if (this.onGridWidthChange) {
+      this.onGridWidthChange(this.gridWidth);
+    }
   }
   
   private setupPanningEvents() {
@@ -1033,5 +1047,13 @@ export class GridRenderer {
     });
     
     this.ctx.restore();
+  }
+  
+  getGridWidth(): number {
+    return this.gridWidth;
+  }
+  
+  setGridWidthCallback(callback: (width: number) => void) {
+    this.onGridWidthChange = callback;
   }
 }
