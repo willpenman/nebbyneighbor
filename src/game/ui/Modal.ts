@@ -54,20 +54,6 @@ export class Modal {
     // Create modal overlay positioned exactly over the canvas using absolute positioning
     this.element = document.createElement('div');
     this.element.className = 'modal-overlay';
-    this.element.style.cssText = `
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(255, 255, 255, 0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      pointer-events: none;
-    `;
 
     // Set the parent container to relative positioning if it isn't already
     const parent = canvas.parentElement;
@@ -81,33 +67,16 @@ export class Modal {
     // Create modal content
     const modalContent = document.createElement('div');
     modalContent.className = 'modal-content';
-    modalContent.style.cssText = `
-      background: transparent;
-      padding: 24px;
-      text-align: center;
-      pointer-events: none;
-    `;
 
     // Create title
     const title = document.createElement('h2');
     title.textContent = this.config.title;
-    title.style.cssText = `
-      margin: 0 0 12px 0;
-      font-size: 24px;
-      font-weight: 600;
-      color: #2D5016;
-      text-shadow: 0 1px 2px rgba(45, 80, 22, 0.1);
-    `;
+    title.className = 'modal-title';
 
     // Create message
     const message = document.createElement('p');
     message.textContent = this.config.message;
-    message.style.cssText = `
-      margin: 0 0 20px 0;
-      font-size: 16px;
-      color: #4A4A4A;
-      line-height: 1.4;
-    `;
+    message.className = 'modal-message';
 
     modalContent.appendChild(title);
     modalContent.appendChild(message);
@@ -119,29 +88,7 @@ export class Modal {
       button.onclick = this.config.primaryButton.onClick;
       
       const isSecondary = this.config.primaryButton.style === 'secondary';
-      button.style.cssText = `
-        background: ${isSecondary ? 'transparent' : '#8B7355'};
-        color: ${isSecondary ? '#8B7355' : 'white'};
-        border: ${isSecondary ? '2px solid #8B7355' : 'none'};
-        padding: 8px 16px;
-        border-radius: 6px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        opacity: ${isSecondary ? '0.7' : '0.9'};
-        pointer-events: auto;
-      `;
-      
-      // Add hover effects
-      button.onmouseenter = () => {
-        button.style.opacity = isSecondary ? '0.5' : '1';
-        button.style.transform = 'translateY(-1px)';
-      };
-      button.onmouseleave = () => {
-        button.style.opacity = isSecondary ? '0.7' : '0.9';
-        button.style.transform = 'translateY(0)';
-      };
+      button.className = `modal-button ${isSecondary ? 'modal-button-secondary' : 'modal-button-primary'}`;
 
       modalContent.appendChild(button);
     }

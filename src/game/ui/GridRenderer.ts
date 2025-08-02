@@ -387,6 +387,11 @@ export class GridRenderer {
     if (!this.gridState.forcedMoves || this.gridState.forcedMoves.size === 0) {
       return;
     }
+    
+    // Skip forced move highlights for 4x4 grids (distracting for beginners)
+    if (this.gridState.size === 4) {
+      return;
+    }
 
     this.ctx.save();
     

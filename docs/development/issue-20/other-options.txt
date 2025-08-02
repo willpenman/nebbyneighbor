@@ -1,0 +1,26 @@
+Font Options Considered for Nebby Neighbor Typography System
+
+SELECTED COMBINATION:
+- Title: Fredoka One (tubular, playful - perfect for future "nebby neighbor peeking" graphics)  
+- Body: Merriweather (readable serif with warm, established neighborhood feel)
+
+OTHER TITLE FONT OPTIONS CONSIDERED:
+- Righteous: Bold, rounded, but still readable
+- Comfortaa: More geometric rounded, modern feel  
+- Nunito: Softer rounded edges, less extreme
+
+OTHER BODY FONT OPTIONS CONSIDERED:
+- Crimson Text: Classic, readable serif
+- Playfair Display: Elegant with character
+- Source Serif Pro: Clean, modern serif
+
+ALTERNATIVE COMBINATIONS EVALUATED:
+1. Fredoka One + Crimson Text (playful + classic)
+2. Righteous + Merriweather (bold + readable) 
+3. Comfortaa + Source Serif Pro (modern + clean)
+
+RATIONALE FOR FINAL SELECTION:
+- Fredoka One's tubular qualities will accommodate future character graphics where a neighbor face peeks out from letters
+- Merriweather was specifically designed for screen reading and has excellent legibility
+- Combination reinforces neighborhood metaphor: playful title suggests friendly neighbors, serif body text suggests established community
+- Typography now supports the grass/land color metaphor with fonts that feel both approachable and grounded

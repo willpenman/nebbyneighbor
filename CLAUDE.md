@@ -100,3 +100,9 @@ This approach maintains a single evolving production codebase while preserving t
 - "Constraint Visualization Style" label used in dev overlay but refers to highlighting, forbidden squares, status bars, etc.
 - Theme variant keys use kebab-case, display names use Title Case - maintain consistency
 - Config object properties vary by issue type (`override`, `statusBarStyle`, `highlightStyle`) - document expected structure per issue type
+
+**Typography Standards:**
+- Will is particular about using proper typographer's quotes in all copy
+- Use Unicode smart quotes: " " (U+201C/U+201D) for double quotes, ' ' (U+2018/U+2019) for single quotes
+- Use multiplication sign × (U+00D7) instead of lowercase x for dimensions (e.g., "18×18 grids")
+- These may look nearly identical to ASCII equivalents in many fonts, but the Unicode versions are preferred

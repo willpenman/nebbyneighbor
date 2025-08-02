@@ -12,7 +12,6 @@
 
 ## Priority Queue
 
-- [x] **Detect and celebrate when exactly 2n neighbors placed without violations** (#9)
 - [ ] **Implement Canvas accessibility with DOM fallback and keyboard navigation** (#14)
 - [ ] **Add Playwright test suite with custom matchers** (#17)
 - [ ] **Display level selection interface** (#11)
