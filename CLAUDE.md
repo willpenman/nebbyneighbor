@@ -15,7 +15,12 @@ We plan to use the Playwright MCP for web actions including visual testing, clic
 
 **Playwright MCP Fix:** If you encounter "Browser is already in use" errors, use `npx -y @playwright/mcp@v0.0.31` to install the previous version which resolves the issue.
 
+**Canvas Click Coordinates:** The game uses canvas-based rendering without good DOM support for grid interactions. For simple actions (that don't involve scrolling), Will can perform a click once while debug logging is enabled, then Claude can use those exact coordinates for testing. This is the best available approach until proper DOM-based grid interaction is implemented.
+
 For mobile testing, use `npm run dev -- --host` to expose the development server to the local network. The server is configured with `allowedHosts: ['wills-macbook-pro-6.local']` for Will's phone access.
+
+**Experimental Branches:**
+- `lattice-view-experiment` - Complete lattice/vertex-based visual redesign with neighbors positioned at line intersections rather than within grid squares. Features solid lattice lines, circular status indicators (75% neighbor size), and abstracted lattice line functions for easy reversion. Until further notice, all development continues on `main` branch.
 
 ## Design Tests
 

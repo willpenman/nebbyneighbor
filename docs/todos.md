@@ -12,13 +12,11 @@
 
 ## Priority Queue
 
-- [ ] **Fix bugs in early warning system (unlisted, see git commits from #13)** (#13)
 - [ ] **Detect and celebrate when exactly 2n neighbors placed without violations** (#9)
-- [ ] **Visualize new constraints and successes in inspect mode** (#15)
-- [ ] **Add placement preview for potential forbidden squares** (#16)
 - [ ] **Implement Canvas accessibility with DOM fallback and keyboard navigation** (#14)
 - [ ] **Add Playwright test suite with custom matchers** (#17)
 - [ ] **Display level selection interface** (#11)
 - [ ] **Create one-time conversion tool from extremely compressed representation to puzzle data** (#12)
 - [ ] **Fix responsive viewport clipping in narrow aspect ratios** (#19)
-- [ ] **Add working undo/redo buttons for neighbor placement** (#10) - close issue - not needed?
+- [ ] **Fix bugs in early warning system (unlisted, see git commits from #13)** (#13)
+- [ ] **Visualize new constraints and successes in inspect mode** (#15) - might not be necessary given other UI improvements

@@ -18,6 +18,7 @@ export type GridState = {
     type: 'neighbor' | 'forbidden-square';
     position: GridPosition;
   };
+  isComplete?: boolean;
 };
 
 export type GridCell = {

@@ -1,6 +1,7 @@
 import { GridState, GridPosition, positionToKey, createGridState, getMostRecentNeighbor } from '../types/grid.js';
 import { GridRenderer } from '../ui/GridRenderer.js';
 import { StatusBar } from '../ui/StatusBar.js';
+import { Modal } from '../ui/Modal.js';
 import { PuzzleConfig, PuzzleState } from '../types/puzzle.js';
 import { LineDetector, InspectionData, ForbiddenSquareInfo } from './LineDetector.js';
 
@@ -8,6 +9,7 @@ export class GridController {
   private gridState: GridState;
   private renderer: GridRenderer;
   private statusBar: StatusBar;
+  private modal: Modal;
   private canvas: HTMLCanvasElement;
   private puzzleState: PuzzleState | null = null;
   private lineDetector: LineDetector;
@@ -17,6 +19,7 @@ export class GridController {
     this.canvas = canvas;
     this.renderer = new GridRenderer(canvas, this.gridState);
     this.statusBar = new StatusBar();
+    this.modal = new Modal();
     this.lineDetector = new LineDetector(size);
     
     this.setupEventListeners();
@@ -72,14 +75,17 @@ export class GridController {
         this.enterNeighborInspectMode(position);
       }
     } else if (hasNeighbor) {
-      if (isMostRecent) {
-        // First click on most recent neighbor removes it directly
+      if (isMostRecent && !this.modal.isShowing()) {
+        // First click on most recent neighbor removes it directly (unless modal is showing)
         this.removeNeighbor(position);
-      } else if (isCurrentlyInspecting) {
-        // Second click on inspected neighbor removes it
+      } else if (isCurrentlyInspecting && !this.modal.isShowing()) {
+        // Second click on inspected neighbor removes it (unless modal is showing)
         this.removeNeighbor(position);
+      } else if (isCurrentlyInspecting && this.modal.isShowing()) {
+        // When modal is showing, allow clearing inspection mode but not removal
+        this.clearInspectMode();
       } else {
-        // First click on older neighbor enters inspection mode
+        // First click on neighbor enters inspection mode (always allowed)
         this.enterNeighborInspectMode(position);
       }
     } else if (isForbidden) {
@@ -110,8 +116,13 @@ export class GridController {
     this.updateForbiddenSquares();
     this.updateStatusBar();
     
-    // Automatically enter inspection mode for newly placed neighbor
-    this.enterNeighborInspectMode(position);
+    // Check for win condition
+    this.checkWinCondition();
+    
+    // Automatically enter inspection mode for newly placed neighbor (unless game is complete)
+    if (!this.gridState.isComplete) {
+      this.enterNeighborInspectMode(position);
+    }
   }
   
   private removeNeighbor(position: GridPosition) {
@@ -125,10 +136,67 @@ export class GridController {
     
     this.updateForbiddenSquares();
     this.updateStatusBar();
+    
+    // Check for win condition (in case it was previously complete)
+    this.checkWinCondition();
+    
     this.clearInspectMode();
     this.render();
   }
   
+  private checkWinCondition() {
+    if (!this.puzzleState) return;
+    
+    // Calculate total neighbors placed (pre-placed + player-placed)
+    const totalNeighbors = this.gridState.prePlacedNeighbors.size + this.gridState.neighbors.size;
+    const requiredNeighbors = this.gridState.size * 2; // 2n for n×n grid
+    
+    // Check if we have exactly the right number of neighbors
+    if (totalNeighbors === requiredNeighbors) {
+      // Verify no three-in-line violations exist
+      const allNeighbors = new Set([
+        ...this.gridState.neighbors,
+        ...this.gridState.prePlacedNeighbors
+      ]);
+      
+      // Check for violations: are any forbidden squares also neighbor squares?
+      const forbiddenSquares = this.lineDetector.calculateForbiddenSquares(allNeighbors);
+      const hasViolations = Array.from(allNeighbors).some(neighbor => forbiddenSquares.has(neighbor));
+      
+      if (!hasViolations) {
+        this.gridState.isComplete = true;
+        this.clearInspectMode(); // Clear inspection mode when winning
+        this.saveCompletionState();
+        this.showSuccessModal();
+        this.render();
+      }
+    } else {
+      // Not complete if we don't have the right number
+      this.gridState.isComplete = false;
+    }
+  }
+
+  private showSuccessModal() {
+    if (!this.puzzleState) return;
+    
+    const totalNeighbors = this.gridState.size * 2;
+    this.modal.show({
+      title: 'Success!',
+      message: `All ${totalNeighbors}/${totalNeighbors} neighbors placed.`,
+      primaryButton: {
+        text: 'Restart',
+        style: 'secondary',
+        onClick: () => {
+          this.modal.hide();
+          this.clearGrid();
+          this.render();
+        }
+      },
+      allowInspectMode: true,
+      preventNeighborRemoval: true
+    });
+  }
+
   private enterNeighborInspectMode(position: GridPosition) {
     this.gridState.inspectionMode = {
       type: 'neighbor',
@@ -224,6 +292,9 @@ export class GridController {
   }
   
   loadPuzzle(puzzleConfig: PuzzleConfig) {
+    // Clear any existing modal when loading new puzzle
+    this.modal.hide();
+    
     // Create new grid state with puzzle data
     this.gridState = createGridState(puzzleConfig.size);
     this.lineDetector = new LineDetector(puzzleConfig.size);
@@ -246,6 +317,18 @@ export class GridController {
     
     this.updateForbiddenSquares();
     this.updateStatusBar();
+    
+    // Check if this puzzle was completed in this session and restore state
+    const completedPuzzles = this.getCompletedPuzzles();
+    const savedState = completedPuzzles[puzzleConfig.id];
+    if (savedState?.completed) {
+      // Restore player's neighbor placements
+      this.gridState.neighbors = new Set(savedState.playerNeighbors);
+      this.updateForbiddenSquares();
+      this.updateStatusBar();
+      this.checkWinCondition(); // This will trigger the success modal if complete
+    }
+    
     this.clearInspectMode();
   }
   
@@ -286,4 +369,46 @@ export class GridController {
   getStatusBar(): StatusBar {
     return this.statusBar;
   }
+  
+  getModal(): Modal {
+    return this.modal;
+  }
+  
+  private saveCompletionState() {
+    if (!this.puzzleState) return;
+    
+    try {
+      const completedPuzzles = this.getCompletedPuzzles();
+      const saveData = {
+        playerNeighbors: [...this.gridState.neighbors],
+        completed: true
+      };
+      completedPuzzles[this.puzzleState.config.id] = saveData;
+      sessionStorage.setItem('nebby-completed-puzzles', JSON.stringify(completedPuzzles));
+    } catch (error) {
+      // Silently fail if sessionStorage is not available
+      console.warn('Could not save completion state:', error);
+    }
+  }
+  
+  private getCompletedPuzzles(): Record<string, any> {
+    try {
+      const stored = sessionStorage.getItem('nebby-completed-puzzles');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Handle old format (array) vs new format (object)
+        if (Array.isArray(parsed)) {
+          // Clear old format and start fresh
+          sessionStorage.removeItem('nebby-completed-puzzles');
+          return {};
+        }
+        return parsed;
+      }
+    } catch (error) {
+      // Silently fail if sessionStorage is not available
+      console.warn('Could not load completion state:', error);
+    }
+    return {};
+  }
+  
 }

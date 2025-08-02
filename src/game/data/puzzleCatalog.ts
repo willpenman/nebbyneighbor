@@ -1,6 +1,25 @@
 import { PuzzleConfig } from '../types/puzzle.js';
 
 export const PUZZLE_CATALOG: PuzzleConfig[] = [
+  // 4x4 test puzzle - win in one move (for testing win detection)
+  // {
+  //   id: "4x4-test-win", 
+  //   size: 4,
+  //   prePlacedNeighbors: [
+  //     { row: 0, col: 2 },  // top middle
+  //     { row: 1, col: 2 },  // second row middle  
+  //     { row: 1, col: 3 },  // second row right
+  //     { row: 2, col: 0 },  // third row left
+  //     { row: 2, col: 1 },  // third row middle-left
+  //     { row: 3, col: 1 },  // bottom middle-left
+  //     { row: 3, col: 3 }   // bottom right
+  //   ],
+  //   metadata: {
+  //     symmetryClass: 'iden',
+  //     index: 0
+  //   }
+  // },
+  
   // 4x4 puzzle - easiest (user specified)
   {
     id: "4x4-002", 
