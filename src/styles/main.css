@@ -105,6 +105,41 @@ header h1 {
   border-radius: 4px;
 }
 
+/* Footer styles */
+footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  flex-shrink: 0;
+}
+
+footer p {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+}
+
+footer a {
+  color: #8B7355;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+footer a:hover {
+  color: #5d4e37;
+  text-decoration: underline;
+}
+
+.levels-explanation {
+  margin-top: 0.75rem;
+  font-weight: normal !important;
+  color: #7f8c8d;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+}
+
 /* Mobile responsive adjustments */
 @media (max-width: 480px) {
   body {
@@ -132,5 +167,10 @@ header h1 {
     padding: 0.5rem;
     height: 70vh; /* Force specific height on mobile */
     flex: none;
+  }
+  
+  footer {
+    margin-top: 1rem;
+    padding: 0.75rem;
   }
 }

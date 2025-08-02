@@ -1,6 +1,7 @@
 import { GridController } from './game/engine/GridController.js';
 import { DevOverlay } from './dev/DevOverlay.js';
 import { getDefaultPuzzle, getPuzzleByIndex, getPuzzleCount } from './game/data/puzzleCatalog.js';
+import { initFooter } from './footer.js';
 
 console.log('Nebby Neighbor game initializing...');
 
@@ -302,3 +303,6 @@ function loadCurrentLevel() {
 
 // Initialize the game
 initializeGame();
+
+// Initialize footer functionality
+initFooter();
