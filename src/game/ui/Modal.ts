@@ -84,9 +84,9 @@ export class Modal {
     title.textContent = this.config.title;
     title.className = 'modal-title';
 
-    // Create message
+    // Create message (support markdown-style bold)
     const message = document.createElement('p');
-    message.textContent = this.config.message;
+    message.innerHTML = this.config.message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     message.className = 'modal-message';
 
     modalContent.appendChild(title);

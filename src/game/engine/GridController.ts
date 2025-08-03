@@ -79,6 +79,12 @@ export class GridController {
       position.row === mostRecentNeighbor.row && 
       position.col === mostRecentNeighbor.col;
     
+    // Handle overconstrained state - show modal for non-removable clicks
+    if (this.gridState.constraintWarning && !hasNeighbor) {
+      this.showOverconstrainedModal();
+      return;
+    }
+    
     if (isPrePlaced) {
       if (isCurrentlyInspecting) {
         // Second click on inspected pre-placed neighbor turns off inspect mode
@@ -88,14 +94,17 @@ export class GridController {
         this.enterNeighborInspectMode(position);
       }
     } else if (hasNeighbor) {
-      if (isMostRecent && !this.modal.isShowing()) {
-        // First click on most recent neighbor removes it directly (unless modal is showing)
+      const isOverconstrainedModal = this.modal.isShowing() && 
+        this.modal.getConfig()?.title === 'Uh-oh';
+      
+      if (isMostRecent && (!this.modal.isShowing() || isOverconstrainedModal)) {
+        // First click on most recent neighbor removes it directly (allow removal during overconstrained modal)
         this.removeNeighbor(position);
-      } else if (isCurrentlyInspecting && !this.modal.isShowing()) {
-        // Second click on inspected neighbor removes it (unless modal is showing)
+      } else if (isCurrentlyInspecting && (!this.modal.isShowing() || isOverconstrainedModal)) {
+        // Second click on inspected neighbor removes it (allow removal during overconstrained modal)
         this.removeNeighbor(position);
       } else if (isCurrentlyInspecting && this.modal.isShowing()) {
-        // When modal is showing, allow clearing inspection mode but not removal
+        // When non-overconstrained modal is showing, allow clearing inspection mode but not removal
         this.clearInspectMode();
       } else {
         // First click on neighbor enters inspection mode (always allowed)
@@ -154,10 +163,57 @@ export class GridController {
     this.checkWinCondition();
     
     this.clearInspectMode();
+    
+    // Hide overconstrained modal if it was showing (since removing a neighbor might resolve constraints)
+    if (this.modal.isShowing()) {
+      this.modal.hide();
+    }
+    
     this.render();
     
   }
   
+  private showOverconstrainedModal() {
+    if (!this.gridState.constraintWarning) return;
+    
+    const { overConstrainedRows, overConstrainedColumns } = this.gridState.constraintWarning;
+    const message = this.generateOverconstrainedMessage(overConstrainedRows, overConstrainedColumns);
+    
+    this.modal.show({
+      title: 'Uh-oh',
+      message,
+      onDismiss: () => this.modal.hide(),
+      maxWidth: this.renderer.getGridWidth()
+    });
+  }
+  
+  private generateOverconstrainedMessage(overConstrainedRows: number[], overConstrainedColumns: number[]): string {
+    // Find the first overconstrained row or column (visually most prominent)
+    let primaryConstraint = '';
+    let hasMultiple = false;
+    let verb = '';
+    
+    if (overConstrainedRows.length > 0) {
+      const rowNum = overConstrainedRows[0] + 1; // Convert to 1-indexed
+      primaryConstraint = `Row ${rowNum}`;
+      hasMultiple = overConstrainedRows.length > 1 || overConstrainedColumns.length > 0;
+    } else if (overConstrainedColumns.length > 0) {
+      const colNum = overConstrainedColumns[0] + 1; // Convert to 1-indexed  
+      primaryConstraint = `Column ${colNum}`;
+      hasMultiple = overConstrainedColumns.length > 1;
+    }
+    
+    if (hasMultiple) {
+      verb = "don't";
+      primaryConstraint = `**${primaryConstraint} (and others)**`;
+    } else {
+      verb = "doesn't";
+      primaryConstraint = `**${primaryConstraint}**`;
+    }
+    
+    return `${primaryConstraint} ${verb} have enough squares available to place 2 neighbors. To make progress, remove a neighbor and backtrack.`;
+  }
+
   private checkWinCondition() {
     if (!this.puzzleState) return;
     
