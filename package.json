@@ -25,10 +25,12 @@
     "url": "https://github.com/willpenman/nebbyneighbor/issues"
   },
   "homepage": "https://github.com/willpenman/nebbyneighbor#readme",
-  "devDependencies": {
-    "@playwright/mcp": "^0.0.31",
-    "@types/node": "^24.1.0",
+  "dependencies": {
     "typescript": "^5.8.3",
     "vite": "^7.0.6"
+  },
+  "devDependencies": {
+    "@playwright/mcp": "^0.0.31",
+    "@types/node": "^24.1.0"
   }
 }

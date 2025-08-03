@@ -1,0 +1,48 @@
+#!/bin/bash
+set -e  # Exit on any error
+
+echo "Deploying Nebby Neighbor..."
+
+# Activate Node.js 22 environment (cPanel style)
+source /home/willpenm/nodevenv/public_html/nebbyneighbor/22/bin/activate
+
+# Verify Node.js version
+echo "Node.js version: $(node --version)"
+echo "npm version: $(npm --version)"
+
+WEB_DIR=/home/willpenm/public_html/nebbyneighbor
+
+# Set git environment and checkout directly to web directory
+export GIT_DIR=/home/willpenm/nebbyneighbor.git
+export GIT_WORK_TREE=$WEB_DIR
+git checkout -f main
+
+# Build in web directory
+cd $WEB_DIR
+
+# Clear any existing node_modules and package-lock.json to ensure clean install
+rm -rf node_modules package-lock.json
+
+# Install production dependencies (TypeScript and Vite are now in dependencies)
+echo "Installing dependencies..."
+npm install --production
+
+# Verify TypeScript is available
+echo "TypeScript version: $(npx tsc --version)"
+
+# Build the project
+echo "Building project..."
+npm run build
+
+# Verify build output exists
+if [ ! -d "dist" ]; then
+    echo "ERROR: Build failed - dist directory not found"
+    exit 1
+fi
+
+# Copy built files to root and clean up source files
+echo "Copying built files..."
+cp -r dist/* ./
+rm -rf dist src node_modules package*.json tsconfig.json vite.config.ts docs CLAUDE.md clear-progress.sh
+
+echo "Nebby Neighbor deployed successfully to willpenman.com/nebbyneighbor"
