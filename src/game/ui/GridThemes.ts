@@ -9,7 +9,7 @@ export interface GridTheme {
   prePlacedNeighborColor: string;
   prePlacedNeighborStyle: 'solid' | 'outline' | 'filled-outline';
   // Forbidden square styling
-  forbiddenSquareStyle: 'subtle-overlay' | 'grid-fade' | 'cross-hatch';
+  forbiddenSquareStyle: 'forbidden-overlay' | 'grid-fade' | 'cross-hatch';
   forbiddenSquareColor: string;
   forbiddenSquareOpacity: number;
 }

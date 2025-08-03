@@ -335,8 +335,8 @@ export class GridRenderer {
       this.ctx.globalAlpha = opacity;
 
       switch (style) {
-        case 'subtle-overlay':
-          this.drawSubtleOverlay(x, y, color);
+        case 'forbidden-overlay':
+          this.drawForbiddenOverlay(x, y, color);
           break;
         case 'grid-fade':
           this.drawGridFade(x, y, color);
@@ -350,7 +350,7 @@ export class GridRenderer {
     }
   }
 
-  private drawSubtleOverlay(x: number, y: number, color: string) {
+  private drawForbiddenOverlay(x: number, y: number, color: string) {
     this.ctx.fillStyle = color;
     this.ctx.fillRect(x, y, this.cellSize, this.cellSize);
   }
@@ -667,7 +667,7 @@ export class GridRenderer {
     // Map pattern to our internal style names
     if (styleConfig.pattern) {
       const patternMap: Record<string, string> = {
-        'solid': 'subtle-overlay',
+        'solid': 'forbidden-overlay',
         'dashed-grid': 'grid-fade', 
         'diagonal-lines': 'cross-hatch'
       };
@@ -827,7 +827,7 @@ export class GridRenderer {
             this.drawWarningIndicator(overConstrainedRows, overConstrainedColumns);
             break;
           case 'headers':
-            this.drawSubtleRowColumnHeaders(overConstrainedRows, overConstrainedColumns);
+            this.drawOverconstrainedHighlights(overConstrainedRows, overConstrainedColumns);
             break;
           default:
             this.drawWarningIndicator(overConstrainedRows, overConstrainedColumns);
@@ -997,52 +997,132 @@ export class GridRenderer {
     }, 0);
   }
   
-  private drawSubtleRowColumnHeaders(overConstrainedRows: number[], overConstrainedColumns: number[]) {
+  private drawOverconstrainedHighlights(overConstrainedRows: number[], overConstrainedColumns: number[]) {
     this.ctx.save();
     
-    const gridSize = this.cellSize * this.gridState.size;
     const offsetX = this.gridOffset.x + this.panOffset.x;
     const offsetY = this.gridOffset.y + this.panOffset.y;
     
-    // Highlight over-constrained rows
-    overConstrainedRows.forEach(rowIndex => {
-      const y = offsetY + rowIndex * this.cellSize;
-      
-      // Draw subtle background highlight
-      this.ctx.fillStyle = 'rgba(205, 133, 63, 0.2)'; // Sandy brown with transparency
-      this.ctx.fillRect(offsetX - 30, y, gridSize + 60, this.cellSize);
-      
-      // Draw row number indicator with pulsing effect
-      this.ctx.fillStyle = '#CD853F';
-      this.ctx.font = 'bold 14px sans-serif';
-      this.ctx.textAlign = 'center';
-      this.ctx.textBaseline = 'middle';
-      
-      // Left side indicator
-      this.ctx.fillText(`${rowIndex + 1}`, offsetX - 15, y + this.cellSize / 2);
-      // Right side indicator  
-      this.ctx.fillText(`${rowIndex + 1}`, offsetX + gridSize + 15, y + this.cellSize / 2);
-    });
+    this.ctx.lineWidth = 3;
     
-    // Highlight over-constrained columns
-    overConstrainedColumns.forEach(colIndex => {
-      const x = offsetX + colIndex * this.cellSize;
+    // Track which edges have been reserved by previous constraints
+    const reservedEdges = new Set<string>();
+    
+    // Helper function to create edge key
+    const edgeKey = (x1: number, y1: number, x2: number, y2: number) => 
+      `${x1},${y1}-${x2},${y2}`;
+    
+    // Helper function to draw line if not already reserved, and reserve it after drawing
+    const drawLineIfAvailable = (x1: number, y1: number, x2: number, y2: number) => {
+      const key = edgeKey(x1, y1, x2, y2);
+      if (!reservedEdges.has(key)) {
+        this.ctx.moveTo(x1, y1);
+        this.ctx.lineTo(x2, y2);
+        reservedEdges.add(key); // Reserve this edge so subsequent constraints can't overwrite
+      }
+    };
+    
+    // Draw all constraints in alternating row/column order - first drawn becomes top layer
+    const rowConstraints = overConstrainedRows.map(rowIndex => ({ type: 'row' as const, index: rowIndex }));
+    const columnConstraints = overConstrainedColumns.map(colIndex => ({ type: 'column' as const, index: colIndex }));
+    
+    const allConstraints = [];
+    const maxConstraints = Math.max(rowConstraints.length, columnConstraints.length);
+    
+    for (let i = 0; i < maxConstraints; i++) {
+      if (i < rowConstraints.length) {
+        allConstraints.push(rowConstraints[i]);
+      }
+      if (i < columnConstraints.length) {
+        allConstraints.push(columnConstraints[i]);
+      }
+    }
+    
+    // Draw all constraints with layering and two-color system
+    allConstraints.forEach((constraint, index) => {
+      // First constraint gets full color, all others get light secondary color
+      if (index === 0) {
+        this.ctx.strokeStyle = '#CD853F'; // Original full-intensity color
+      } else {
+        this.ctx.strokeStyle = '#B8B8B8'; // Light gray secondary color (fully opaque)
+      }
       
-      // Draw subtle background highlight
-      this.ctx.fillStyle = 'rgba(205, 133, 63, 0.2)';
-      this.ctx.fillRect(x, offsetY - 30, this.cellSize, gridSize + 60);
+      this.ctx.beginPath();
       
-      // Draw column letter indicator
-      this.ctx.fillStyle = '#CD853F';
-      this.ctx.font = 'bold 14px sans-serif';
-      this.ctx.textAlign = 'center';
-      this.ctx.textBaseline = 'middle';
+      if (constraint.type === 'row') {
+        const rowIndex = constraint.index;
+        const y = offsetY + rowIndex * this.cellSize;
+        
+        // For row constraint: draw left/right edges for all cells, top/bottom edges for first/last cells
+        for (let colIndex = 0; colIndex < this.gridState.size; colIndex++) {
+          const x = offsetX + colIndex * this.cellSize;
+          const isFirst = colIndex === 0;
+          const isLast = colIndex === this.gridState.size - 1;
+          
+          // All cells get top and bottom edges
+          drawLineIfAvailable(x, y, x + this.cellSize, y); // Top edge
+          drawLineIfAvailable(x, y + this.cellSize, x + this.cellSize, y + this.cellSize); // Bottom edge
+          
+          // First cell gets left edge
+          if (isFirst) {
+            drawLineIfAvailable(x, y, x, y + this.cellSize); // Left edge
+          }
+          
+          // Last cell gets right edge  
+          if (isLast) {
+            drawLineIfAvailable(x + this.cellSize, y, x + this.cellSize, y + this.cellSize); // Right edge
+          }
+        }
+        
+        // Mark ALL edges as reserved to prevent color overwriting
+        // Top and bottom edges (full width)
+        reservedEdges.add(edgeKey(offsetX, y, offsetX + this.gridState.size * this.cellSize, y));
+        reservedEdges.add(edgeKey(offsetX, y + this.cellSize, offsetX + this.gridState.size * this.cellSize, y + this.cellSize));
+        
+        // All vertical edges (internal and external)
+        for (let colIndex = 0; colIndex <= this.gridState.size; colIndex++) {
+          const segmentX = offsetX + colIndex * this.cellSize;
+          reservedEdges.add(edgeKey(segmentX, y, segmentX, y + this.cellSize));
+        }
+        
+      } else { // column
+        const colIndex = constraint.index;
+        const x = offsetX + colIndex * this.cellSize;
+        
+        // For column constraint: draw top/bottom edges for all cells, left/right edges for first/last cells
+        for (let rowIndex = 0; rowIndex < this.gridState.size; rowIndex++) {
+          const y = offsetY + rowIndex * this.cellSize;
+          const isFirst = rowIndex === 0;
+          const isLast = rowIndex === this.gridState.size - 1;
+          
+          // All cells get left and right edges
+          drawLineIfAvailable(x, y, x, y + this.cellSize); // Left edge
+          drawLineIfAvailable(x + this.cellSize, y, x + this.cellSize, y + this.cellSize); // Right edge
+          
+          // First cell gets top edge
+          if (isFirst) {
+            drawLineIfAvailable(x, y, x + this.cellSize, y); // Top edge
+          }
+          
+          // Last cell gets bottom edge
+          if (isLast) {
+            drawLineIfAvailable(x, y + this.cellSize, x + this.cellSize, y + this.cellSize); // Bottom edge
+          }
+        }
+        
+        // Mark ALL edges as reserved to prevent color overwriting
+        // Left and right edges (full height)
+        reservedEdges.add(edgeKey(x, offsetY, x, offsetY + this.gridState.size * this.cellSize));
+        reservedEdges.add(edgeKey(x + this.cellSize, offsetY, x + this.cellSize, offsetY + this.gridState.size * this.cellSize));
+        
+        // All horizontal edges (internal and external)
+        for (let rowIndex = 0; rowIndex <= this.gridState.size; rowIndex++) {
+          const segmentY = offsetY + rowIndex * this.cellSize;
+          reservedEdges.add(edgeKey(x, segmentY, x + this.cellSize, segmentY));
+        }
+      }
       
-      const colLetter = String.fromCharCode(65 + colIndex); // A, B, C, etc.
-      // Top indicator
-      this.ctx.fillText(colLetter, x + this.cellSize / 2, offsetY - 15);
-      // Bottom indicator
-      this.ctx.fillText(colLetter, x + this.cellSize / 2, offsetY + gridSize + 15);
+      this.ctx.stroke();
     });
     
     this.ctx.restore();

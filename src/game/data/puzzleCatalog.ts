@@ -1,6 +1,24 @@
 import { PuzzleConfig } from '../types/puzzle.js';
 
 export const PUZZLE_CATALOG: PuzzleConfig[] = [
+  // 4x4 test puzzle - DELIBERATELY INCORRECT overconstrained partial attempt
+  // This configuration places neighbors that create multiple line constraints
+  // to test visual clarity of overconstrained indicators: [(1,1), (1,3), (3,1), (3,3)]
+  {
+    id: "4x4-overconstrained-test", 
+    size: 4,
+    prePlacedNeighbors: [
+      { row: 1, col: 1 },  // center-left area
+      { row: 1, col: 3 },  // center-right area  
+      { row: 3, col: 1 },  // bottom-left area
+      { row: 3, col: 3 }   // bottom-right area
+    ],
+    metadata: {
+      symmetryClass: 'iden',
+      index: 0
+    }
+  },
+
   // 4x4 test puzzle - win in one move (for testing win detection)
   // {
   //   id: "4x4-test-win", 

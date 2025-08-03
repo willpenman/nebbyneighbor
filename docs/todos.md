@@ -12,6 +12,8 @@
 
 ## Priority Queue
 
+- [ ] **Improve overconstrained indicator visual clarity** (#22) - Part 1 complete (visual improvements), Part 2 pending (educational modal)
+- [ ] **Fix canvas rendering and status bar initialization bugs on page load** (#21)
 - [ ] **Implement Canvas accessibility with DOM fallback and keyboard navigation** (#14)
 - [ ] **Add Playwright test suite with custom matchers** (#17)
 - [ ] **Display level selection interface** (#11)
