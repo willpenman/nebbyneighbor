@@ -71,6 +71,11 @@ This approach maintains a single evolving production codebase while preserving t
 **Issue-specific testing:**
 - `http://localhost:3000/index.html?issue=N` - Load specific issue configuration
 
+**Clear saved progress (per-browser, localhost:3000 only):**
+- `./clear-progress.sh` - Clear progress in Safari (default)
+- `./clear-progress.sh chrome` - Clear progress in Chrome
+- Note: Progress is saved per-browser in sessionStorage and persists until browser tab is closed
+
 **Git workflow:**
 - To back up and try again: `git add .claude/ && git commit && git reset --hard HEAD && git clean -fdn` (then probably `git clean -fd` to actually do it)
 
