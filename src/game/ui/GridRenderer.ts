@@ -116,7 +116,6 @@ export class GridRenderer {
     
     // Center the grid, but ensure it fits within viewport for scrollable grids
     const totalGridWidth = this.cellSize * this.gridState.size;
-    const totalGridHeight = this.cellSize * this.gridState.size;
     
     if (this.isScrollable) {
       // For scrollable grids, position at top with minimal padding, center horizontally
@@ -402,8 +401,8 @@ export class GridRenderer {
       return;
     }
     
-    // Skip forced move highlights for 4x4 grids (distracting for beginners)
-    if (this.gridState.size === 4) {
+    // Skip forced move highlights for 4x4 and 5x5 grids (distracting for beginners)
+    if (this.gridState.size <= 5) {
       return;
     }
 
