@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Nebby Neighbor - A puzzle game based on the no-three-in-line mathematical problem">
+  <title>Nebby Neighbor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/nebbyneighbor/assets/index-Bgl96Sjl.js"></script>
+  <link rel="stylesheet" crossorigin href="/nebbyneighbor/assets/index-D5HjuQZ_.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Nebby Neighbor</h1>
+      <p class="subtitle">(In Pittsburgh, "nebby" means "nosy")</p>
+      <p class="instruction">Place all neighbors so that no one is hidden from someone's view. To fit everyone, you'll need 2 neighbors in each row and each column.</p>
+    </header>
+    <main id="game-container">
+      <!-- Game Status Bar -->
+      <div id="status-bar" class="status-bar">
+        <div id="neighbor-counter" class="neighbor-counter">
+          <span id="counter-display">8</span>
+        </div>
+        <div id="level-identifier" class="level-identifier">
+          <span id="level-display">6x6-042</span>
+        </div>
+      </div>
+      <!-- Game will be rendered here -->
+    </main>
+    <footer>
+      <p>By <a href="https://willpenman.com" target="_blank" rel="noopener">Will Penman</a>. See some <a href="#" id="levels-link">interesting facts</a> about this game.</p>
+      <p id="levels-explanation" class="levels-explanation" style="display: none;">Mathematically, this game is the "no three in line" problem. Computers have found all the possible puzzle solutions up through 18×18 grids. The biggest solution ever found is from a 52×52 grid, where the computer was able to place the full 104 neighbors. Nobody knows if it's possible to do it on every grid size.</p>
+    </footer>
+  </div>
+</body>
+</html>
