@@ -6,9 +6,15 @@ export type ModalConfig = {
     onClick: () => void;
     style?: 'primary' | 'secondary';
   };
+  secondaryButton?: {
+    text: string;
+    onClick: () => void;
+    style?: 'primary' | 'secondary';
+  };
   onDismiss?: () => void;
   allowInspectMode?: boolean;
   preventNeighborRemoval?: boolean;
+  maxWidth?: number;
 };
 
 export class Modal {
@@ -67,6 +73,11 @@ export class Modal {
     // Create modal content
     const modalContent = document.createElement('div');
     modalContent.className = 'modal-content';
+    
+    // Apply max width if specified
+    if (this.config.maxWidth) {
+      modalContent.style.maxWidth = `${this.config.maxWidth}px`;
+    }
 
     // Create title
     const title = document.createElement('h2');
@@ -88,6 +99,18 @@ export class Modal {
       button.onclick = this.config.primaryButton.onClick;
       
       const isSecondary = this.config.primaryButton.style === 'secondary';
+      button.className = `modal-button ${isSecondary ? 'modal-button-secondary' : 'modal-button-primary'}`;
+
+      modalContent.appendChild(button);
+    }
+
+    // Add secondary button if provided
+    if (this.config.secondaryButton) {
+      const button = document.createElement('button');
+      button.textContent = this.config.secondaryButton.text;
+      button.onclick = this.config.secondaryButton.onClick;
+      
+      const isSecondary = this.config.secondaryButton.style === 'secondary';
       button.className = `modal-button ${isSecondary ? 'modal-button-secondary' : 'modal-button-primary'}`;
 
       modalContent.appendChild(button);

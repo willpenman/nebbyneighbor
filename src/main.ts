@@ -49,7 +49,11 @@ async function initializeGame() {
     // Set dynamic accessibility label
     canvas.setAttribute('aria-label', `${puzzle.size}x${puzzle.size} grid puzzle - click cells to place neighbors`);
 
-    const controller = new GridController(canvas, puzzle.size);
+    const controller = new GridController(canvas, puzzle.size, {
+      onNextLevel: goToNextLevel,
+      getCurrentLevelIndex: () => currentLevelIndex,
+      hasNextLevel: () => currentLevelIndex < getPuzzleCount() - 1
+    });
     controller.loadPuzzle(puzzle);
     currentController = controller;
     

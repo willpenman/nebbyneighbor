@@ -13,12 +13,20 @@ export class GridController {
   private canvas: HTMLCanvasElement;
   private puzzleState: PuzzleState | null = null;
   private lineDetector: LineDetector;
+  private onNextLevel?: () => void;
+  private getCurrentLevelIndex?: () => number;
+  private hasNextLevel?: () => boolean;
   
-  constructor(canvas: HTMLCanvasElement, size: number = 4) {
+  constructor(canvas: HTMLCanvasElement, size: number = 4, callbacks?: { onNextLevel?: () => void, getCurrentLevelIndex?: () => number, hasNextLevel?: () => boolean }) {
     this.gridState = createGridState(size);
     this.canvas = canvas;
     this.renderer = new GridRenderer(canvas, this.gridState);
     this.statusBar = new StatusBar();
+    
+    // Store navigation callbacks
+    this.onNextLevel = callbacks?.onNextLevel;
+    this.getCurrentLevelIndex = callbacks?.getCurrentLevelIndex;
+    this.hasNextLevel = callbacks?.hasNextLevel;
     
     // Set up callback to sync status bar width with grid width
     this.renderer.setGridWidthCallback((width: number) => {
@@ -186,20 +194,42 @@ export class GridController {
     if (!this.puzzleState) return;
     
     const totalNeighbors = this.gridState.size * 2;
+    const currentLevel = this.getCurrentLevelIndex ? this.getCurrentLevelIndex() + 1 : 1;
+    const hasNext = this.hasNextLevel ? this.hasNextLevel() : false;
+    
     this.modal.show({
-      title: 'Success!',
-      message: `All ${totalNeighbors}/${totalNeighbors} neighbors placed.`,
-      primaryButton: {
-        text: 'Restart',
-        style: 'secondary',
+      title: `Level ${currentLevel} - Success!`,
+      message: `You placed all ${totalNeighbors}/${totalNeighbors} neighbors. Everyone can see everyone else. Click a neighbor to see their view.`,
+      primaryButton: hasNext ? {
+        text: 'Next level',
+        style: 'primary',
+        onClick: () => {
+          this.modal.hide();
+          if (this.onNextLevel) {
+            this.onNextLevel();
+          }
+        }
+      } : {
+        text: 'Play this level again',
+        style: 'primary',
         onClick: () => {
           this.modal.hide();
           this.clearGrid();
           this.render();
         }
       },
+      secondaryButton: hasNext ? {
+        text: 'Play this level again',
+        style: 'secondary',
+        onClick: () => {
+          this.modal.hide();
+          this.clearGrid();
+          this.render();
+        }
+      } : undefined,
       allowInspectMode: true,
-      preventNeighborRemoval: true
+      preventNeighborRemoval: true,
+      maxWidth: this.renderer.getGridWidth()
     });
   }
 

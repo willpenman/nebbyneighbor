@@ -224,6 +224,12 @@ footer a:hover {
   cursor: pointer;
   transition: all 0.2s ease;
   pointer-events: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.modal-button + .modal-button {
+  margin-top: 16px;
 }
 
 .modal-button-primary {
