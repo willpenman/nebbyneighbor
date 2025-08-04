@@ -36,7 +36,12 @@ export class GridController {
     this.lineDetector = new LineDetector(size);
     
     this.setupEventListeners();
-    this.render();
+    
+    // Defer initial setup to ensure DOM layout is stable
+    requestAnimationFrame(() => {
+      this.renderer.calculateDimensions();
+      this.render();
+    });
   }
   
   private setupEventListeners() {

@@ -61,8 +61,8 @@ export class GridRenderer {
     this.ctx = ctx;
     
     this.setupCanvas();
-    this.calculateDimensions();
     this.setupPanningEvents();
+    // Don't call calculateDimensions here - let GridController call it when ready
   }
   
   private setupCanvas() {
@@ -80,8 +80,21 @@ export class GridRenderer {
     // Don't set explicit pixel dimensions - let CSS handle responsive sizing
   }
   
-  private calculateDimensions() {
+  calculateDimensions() {
+    // Recalculate canvas dimensions first
+    this.setupCanvas();
+    
     const rect = this.canvas.getBoundingClientRect();
+    
+    // Guard against invalid dimensions during DOM layout
+    if (rect.width <= 0 || rect.height <= 0) {
+      console.log('Canvas dimensions not ready, deferring calculation');
+      requestAnimationFrame(() => {
+        this.calculateDimensions();
+      });
+      return;
+    }
+    
     // Use reasonable padding - minimal on mobile, larger on desktop
     // No top padding since status bar is now directly adjacent
     const sidePadding = rect.width < 500 ? 2 : 40;
@@ -92,6 +105,15 @@ export class GridRenderer {
     const availableHeight = rect.height - topPadding - bottomPadding;
     // Use minimum dimension to ensure grid fits completely in viewport
     const availableSpace = Math.min(availableWidth, availableHeight);
+    
+    // Guard against negative available space
+    if (availableSpace <= 0) {
+      console.log('No available space for grid, deferring calculation');
+      requestAnimationFrame(() => {
+        this.calculateDimensions();
+      });
+      return;
+    }
     
     // Calculate ideal cell size
     const idealCellSize = availableSpace / this.gridState.size;
@@ -137,6 +159,9 @@ export class GridRenderer {
     if (this.onGridWidthChange) {
       this.onGridWidthChange(this.gridWidth);
     }
+    
+    // Trigger a render now that dimensions are properly calculated
+    this.render();
   }
   
   private setupPanningEvents() {
@@ -454,6 +479,12 @@ export class GridRenderer {
   }
   
   private drawNeighborShape(centerX: number, centerY: number, radius: number, shape: 'circle' | 'rounded-square', isPrePlaced: boolean, isHighlighted: boolean = false) {
+    // Guard against negative or zero radius values
+    if (radius <= 0) {
+      console.warn('Invalid radius for neighbor shape:', radius);
+      return;
+    }
+    
     const color = isPrePlaced ? this.theme.prePlacedNeighborColor : this.theme.neighborColor;
     const styleType = isPrePlaced ? this.theme.prePlacedNeighborStyle : 'solid';
     
@@ -621,12 +652,18 @@ export class GridRenderer {
       this.calculateDimensions();
     }
     
-    this.render();
+    // Only render if dimensions have been calculated (cellSize > 0)
+    if (this.cellSize > 0) {
+      this.render();
+    }
   }
   
   updateInspectionData(data: InspectionData | ForbiddenSquareInfo | null) {
     this.inspectionData = data;
-    this.render();
+    // Only render if dimensions have been calculated (cellSize > 0)
+    if (this.cellSize > 0) {
+      this.render();
+    }
   }
   
   updateLineStyles(styles: {
