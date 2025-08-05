@@ -12,11 +12,9 @@
 
 ## Priority Queue
 
-- [ ] **Fix canvas rendering and status bar initialization bugs on page load** (#21)
 - [ ] **Implement Canvas accessibility with DOM fallback and keyboard navigation** (#14)
 - [ ] **Add Playwright test suite with custom matchers** (#17)
 - [ ] **Display level selection interface** (#11)
 - [ ] **Create one-time conversion tool from extremely compressed representation to puzzle data** (#12)
-- [ ] **Fix responsive viewport clipping in narrow aspect ratios** (#19)
 - [ ] **Fix bugs in early warning system (unlisted, see git commits from #13)** (#13)
 - [ ] **Visualize new constraints and successes in inspect mode** (#15) - might not be necessary given other UI improvements

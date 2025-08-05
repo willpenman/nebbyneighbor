@@ -58,6 +58,7 @@ header h1 {
 /* Status Bar */
 .status-bar {
   display: block;
+  position: relative;
   padding: 0.75rem 1rem;
   background-color: #faf7f2;
   border: 1px solid #d4c4a8;
@@ -66,17 +67,23 @@ header h1 {
   width: fit-content;
   min-width: 200px;
   text-align: center;
+  min-height: calc(1.2em + 1.5rem); /* Line height + double the padding */
 }
 
-.neighbor-counter {
-  display: inline-block;
+#counter-display {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
   font-weight: 700;
   color: #5d4e37;
-  margin-right: 2rem;
 }
 
-.level-identifier {
-  display: inline-block;
+#level-display {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
   font-weight: 400;
   color: #5d4e37;
   font-size: 0.9rem;
