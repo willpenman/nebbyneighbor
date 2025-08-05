@@ -117,9 +117,17 @@ export class GridRenderer {
     this.gridWidth = this.cellSize * this.gridState.size;
     const gridHeight = this.cellSize * this.gridState.size;
     
-    // Canvas uses full available space (grid will be centered within with padding)
+    // Canvas sizing depends on which dimension constrains
     const canvasWidth = availableWidth;
-    const canvasHeight = availableHeight;
+    let canvasHeight: number;
+    
+    if (availableWidth < availableHeight) {
+      // Narrow screen: width constrains, so canvas height only needs to fit the grid
+      canvasHeight = gridHeight + topPadding + canvasPadding;
+    } else {
+      // Wide screen: height constrains, so canvas uses full available height
+      canvasHeight = availableHeight;
+    }
     
     // Apply dimensions to canvas element directly
     this.canvas.style.width = canvasWidth + 'px';

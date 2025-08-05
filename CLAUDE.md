@@ -60,6 +60,28 @@ Each theme variant should have:
 
 This approach maintains a single evolving production codebase while preserving the full design exploration history.
 
+## Layout System Architecture
+
+**Core Design Principle (Issue #21 Resolution):**
+The game uses a **constraint-based layout system** that eliminates flex layout conflicts and provides deterministic sizing. Since grids are square and need to be "as large as possible while showing the whole grid," there are exactly two constraints:
+
+- **Wide screens**: Height constrains (grid limited by viewport height minus header/status bar/footer)  
+- **Narrow screens**: Width constrains (grid limited by viewport width minus padding)
+
+**Implementation:**
+- `GridRenderer.calculateDimensions()` measures viewport directly, determines constraining dimension
+- Canvas sized exactly in pixels by JavaScript (no CSS flex dependencies)
+- Status bar/game container use simple `display: block` with `margin: 0 auto` centering
+- Mobile responsive without forced height overrides or competing layout systems
+
+**Key Benefits:**
+- No `getBoundingRect()` dependency on unstable CSS layout
+- No async callback timing issues between canvas/status bar sizing  
+- Single deterministic sizing system prevents rendering bugs
+- Sustainable foundation for all future layout development
+
+**DO NOT reintroduce flex layout** - this creates the exact conflicts that caused Issues #19 and #21.
+
 ## For Will
 
 **Development commands:**
