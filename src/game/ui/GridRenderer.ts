@@ -78,12 +78,17 @@ export class GridRenderer {
     // Status bar height (only constraint that matters for maximum sizing)
     const statusBarHeight = 60; // Approximate fixed height
     
-    // Available space for the grid (maximize usage)
-    const availableWidth = viewportWidth; // Canvas uses full width
+    // App and container padding (from CSS: both 10px desktop, 5px mobile)
+    const appPadding = window.innerWidth <= 480 ? 5 : 10;
+    const containerPadding = window.innerWidth <= 480 ? 5 : 10;
+    
+    // Available space for the canvas within the app and game container
+    const availableWidth = viewportWidth - (appPadding * 2) - (containerPadding * 2); // Canvas fits within all padding
     const availableHeight = viewportHeight - statusBarHeight; // Canvas uses full height minus status bar
     
     // Account for padding within the canvas (visual breathing room around grid)
     const canvasPadding = 20;
+    const topPadding = 0; // No padding on top so grid touches status bar
     
     // Determine constraining dimension
     let maxGridSize: number;
@@ -93,7 +98,7 @@ export class GridRenderer {
       maxGridSize = availableWidth - (canvasPadding * 2);
     } else {
       // Wide screen: height constrains  
-      maxGridSize = availableHeight - (canvasPadding * 2);
+      maxGridSize = availableHeight - topPadding - canvasPadding; // Only bottom padding
     }
     
     // Calculate cell size
@@ -131,7 +136,7 @@ export class GridRenderer {
       this.gridOffset.y = 10; // Small top margin for scrollable grids
     } else {
       this.gridOffset.x = (canvasWidth - this.gridWidth) / 2;
-      this.gridOffset.y = (canvasHeight - gridHeight) / 2;
+      this.gridOffset.y = topPadding; // No top padding so grid touches status bar
     }
     
     // Set cursor
