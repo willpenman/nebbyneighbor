@@ -66,99 +66,83 @@ export class GridRenderer {
   }
   
   private setupCanvas() {
-    const dpr = window.devicePixelRatio || 1;
-    
-    // Force layout recalculation
-    this.canvas.offsetWidth;
-    
-    const rect = this.canvas.getBoundingClientRect();
-    
-    this.canvas.width = rect.width * dpr;
-    this.canvas.height = rect.height * dpr;
-    
-    this.ctx.scale(dpr, dpr);
-    // Don't set explicit pixel dimensions - let CSS handle responsive sizing
+    // Canvas dimensions are now handled entirely in calculateDimensions()
+    // This method is kept for compatibility but does minimal work
   }
   
   calculateDimensions() {
-    // Recalculate canvas dimensions first
-    this.setupCanvas();
+    // Get viewport dimensions
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
     
-    const rect = this.canvas.getBoundingClientRect();
+    // Status bar height (only constraint that matters for maximum sizing)
+    const statusBarHeight = 60; // Approximate fixed height
     
-    // Guard against invalid dimensions during DOM layout
-    if (rect.width <= 0 || rect.height <= 0) {
-      console.log('Canvas dimensions not ready, deferring calculation');
-      requestAnimationFrame(() => {
-        this.calculateDimensions();
-      });
-      return;
+    // Available space for the grid (maximize usage)
+    const availableWidth = viewportWidth; // Canvas uses full width
+    const availableHeight = viewportHeight - statusBarHeight; // Canvas uses full height minus status bar
+    
+    // Account for padding within the canvas (visual breathing room around grid)
+    const canvasPadding = 20;
+    
+    // Determine constraining dimension
+    let maxGridSize: number;
+    
+    if (availableWidth < availableHeight) {
+      // Narrow screen: width constrains
+      maxGridSize = availableWidth - (canvasPadding * 2);
+    } else {
+      // Wide screen: height constrains  
+      maxGridSize = availableHeight - (canvasPadding * 2);
     }
     
-    // Use reasonable padding - minimal on mobile, larger on desktop
-    // No top padding since status bar is now directly adjacent
-    const sidePadding = rect.width < 500 ? 2 : 40;
-    const topPadding = 0; // Status bar touches grid directly
-    const bottomPadding = rect.width < 500 ? 2 : 40;
+    // Calculate cell size
+    const idealCellSize = maxGridSize / this.gridState.size;
     
-    const availableWidth = rect.width - (sidePadding * 2);
-    const availableHeight = rect.height - topPadding - bottomPadding;
-    // Use minimum dimension to ensure grid fits completely in viewport
-    const availableSpace = Math.min(availableWidth, availableHeight);
-    
-    // Guard against negative available space
-    if (availableSpace <= 0) {
-      console.log('No available space for grid, deferring calculation');
-      requestAnimationFrame(() => {
-        this.calculateDimensions();
-      });
-      return;
-    }
-    
-    // Calculate ideal cell size
-    const idealCellSize = availableSpace / this.gridState.size;
-    
-    console.log(`Canvas: ${rect.width}×${rect.height}, Available: ${availableSpace}px, Ideal cell: ${idealCellSize}px`);
-    
-    // For small grids, use the full available space to maximize cell size
-    if (this.gridState.size <= 4) {
-      this.cellSize = idealCellSize; // Use maximum possible size that fits
-      this.isScrollable = false;
-      console.log(`Grid ${this.gridState.size}×${this.gridState.size} fits normally: cellSize=${this.cellSize}px`);
-    } else if (idealCellSize < GridRenderer.MIN_CELL_SIZE) {
-      // Only use scrolling for larger grids that actually need it
+    // Check if we need scrolling
+    if (idealCellSize < GridRenderer.MIN_CELL_SIZE) {
       this.cellSize = GridRenderer.MIN_CELL_SIZE;
       this.isScrollable = true;
-      console.log(`Grid ${this.gridState.size}×${this.gridState.size} requires scrolling: cellSize=${this.cellSize}px`);
     } else {
       this.cellSize = idealCellSize;
       this.isScrollable = false;
-      console.log(`Grid ${this.gridState.size}×${this.gridState.size} fits normally: cellSize=${this.cellSize}px`);
     }
     
-    // Center the grid, but ensure it fits within viewport for scrollable grids
-    const totalGridWidth = this.cellSize * this.gridState.size;
+    // Calculate actual grid dimensions
+    this.gridWidth = this.cellSize * this.gridState.size;
+    const gridHeight = this.cellSize * this.gridState.size;
     
+    // Canvas uses full available space (grid will be centered within with padding)
+    const canvasWidth = availableWidth;
+    const canvasHeight = availableHeight;
+    
+    // Apply dimensions to canvas element directly
+    this.canvas.style.width = canvasWidth + 'px';
+    this.canvas.style.height = canvasHeight + 'px';
+    this.canvas.width = canvasWidth * (window.devicePixelRatio || 1);
+    this.canvas.height = canvasHeight * (window.devicePixelRatio || 1);
+    
+    // Scale context for device pixel ratio
+    this.ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+    
+    // Center grid within canvas
     if (this.isScrollable) {
-      // For scrollable grids, position at top with minimal padding, center horizontally
-      this.gridOffset.x = Math.max(2, (rect.width - totalGridWidth) / 2);
-      this.gridOffset.y = 20; // Always position at top for scrollable grids
+      this.gridOffset.x = Math.max(0, (canvasWidth - this.gridWidth) / 2);
+      this.gridOffset.y = 10; // Small top margin for scrollable grids
     } else {
-      // For non-scrollable grids, center horizontally but position at top since status bar is adjacent
-      this.gridOffset.x = (rect.width - totalGridWidth) / 2;
-      this.gridOffset.y = topPadding; // Position at top to touch status bar
+      this.gridOffset.x = (canvasWidth - this.gridWidth) / 2;
+      this.gridOffset.y = (canvasHeight - gridHeight) / 2;
     }
     
-    // Set appropriate cursor
+    // Set cursor
     this.canvas.style.cursor = this.isScrollable ? 'grab' : 'pointer';
     
-    // Store grid width for external access (actual grid size, not canvas width)
-    this.gridWidth = this.cellSize * this.gridState.size;
-    
-    // Notify callback if grid width changed
+    // Notify status bar of grid width
     if (this.onGridWidthChange) {
       this.onGridWidthChange(this.gridWidth);
     }
+    
+    console.log(`Viewport: ${viewportWidth}×${viewportHeight}, Canvas: ${canvasWidth}×${canvasHeight}, Grid: ${this.gridWidth}×${gridHeight}, Cell: ${this.cellSize}px, Scrollable: ${this.isScrollable}`);
     
     // Trigger a render now that dimensions are properly calculated
     this.render();
@@ -636,10 +620,8 @@ export class GridRenderer {
   }
   
   resize() {
-    this.setupCanvas();
     this.calculateDimensions();
     this.panOffset = { x: 0, y: 0 }; // Reset pan when resizing
-    this.render();
   }
   
   updateGridState(newState: GridState) {
