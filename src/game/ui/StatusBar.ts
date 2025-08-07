@@ -65,15 +65,13 @@ export class StatusBar {
     switch (this.config.levelStyle) {
       case 'id-only':
         // Generate display ID from semantic information
-        displayText = `${puzzle.size}x${puzzle.size}-${(puzzle.metadata?.index || 1).toString().padStart(3, '0')}`;
+        displayText = `${puzzle.size}x${puzzle.size}-${puzzle.puzzleNumber.toString().padStart(3, '0')}`;
         break;
       case 'friendly':
-        const levelNumber = puzzle.metadata?.index || 1;
-        displayText = `Level ${levelNumber}`;
+        displayText = `Level ${puzzle.puzzleNumber}`;
         break;
       case 'compact':
-        const compactNumber = puzzle.metadata?.index || 1;
-        displayText = `#${compactNumber}`;
+        displayText = `#${puzzle.puzzleNumber}`;
         break;
     }
     

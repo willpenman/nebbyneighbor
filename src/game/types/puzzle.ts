@@ -4,13 +4,10 @@ export type SymmetryClass = 'iden' | 'dia1' | 'ort1' | 'rot2' | 'dia2' | 'rot4' 
 
 export type PuzzleConfig = {
   id: string;
+  puzzleNumber: number;
   size: number;
+  symmetryClass: SymmetryClass;
   prePlacedNeighbors: GridPosition[];
-  metadata: {
-    symmetryClass: SymmetryClass;
-    difficulty?: number;
-    index?: number;
-  };
 };
 
 export type PuzzleState = {
