@@ -843,28 +843,42 @@ export class GridRenderer {
   }
   
   private drawSkulls() {
-    // For now, draw a test skull in the top-left square for visual testing
-    const testRow = 0;
-    const testCol = 0;
-    const centerX = this.gridOffset.x + this.panOffset.x + (testCol * this.cellSize) + (this.cellSize / 2);
-    const centerY = this.gridOffset.y + this.panOffset.y + (testRow * this.cellSize) + (this.cellSize / 2);
-    
-    this.drawSkull(centerX, centerY, this.cellSize * 0.5);
+    // Draw skulls at positions marked as dead-end paths
+    for (const skullKey of this.gridState.skulls) {
+      const [row, col] = skullKey.split(',').map(Number);
+      const centerX = this.gridOffset.x + this.panOffset.x + (col * this.cellSize) + (this.cellSize / 2);
+      const centerY = this.gridOffset.y + this.panOffset.y + (row * this.cellSize) + (this.cellSize / 2);
+      
+      this.drawSkull(centerX, centerY, this.cellSize * 0.5, row, col);
+    }
   }
   
-  private drawSkull(centerX: number, centerY: number, size: number) {
+  private drawSkull(centerX: number, centerY: number, size: number, row: number, col: number) {
     this.ctx.save();
     
-    // First, get the grid position to draw forbidden square background
-    const testRow = 0;
-    const testCol = 0;
-    const cellX = this.gridOffset.x + this.panOffset.x + (testCol * this.cellSize);
-    const cellY = this.gridOffset.y + this.panOffset.y + (testRow * this.cellSize);
+    // Draw forbidden square background for the skull using the same style as other forbidden squares
+    const cellX = this.gridOffset.x + this.panOffset.x + (col * this.cellSize);
+    const cellY = this.gridOffset.y + this.panOffset.y + (row * this.cellSize);
     
-    // Draw forbidden square background
-    this.ctx.fillStyle = this.theme.forbiddenSquareColor;
+    // Use the same forbidden square styling as the rest of the grid
+    const style = this.theme.forbiddenSquareStyle;
+    const color = this.theme.forbiddenSquareColor;
+    
     this.ctx.globalAlpha = this.theme.forbiddenSquareOpacity;
-    this.ctx.fillRect(cellX, cellY, this.cellSize, this.cellSize);
+    
+    // Apply the same forbidden square style logic
+    switch (style) {
+      case 'forbidden-overlay':
+        this.drawForbiddenOverlay(cellX, cellY, color);
+        break;
+      case 'grid-fade':
+        this.drawGridFade(cellX, cellY, color);
+        break;
+      case 'cross-hatch':
+        this.drawCrossHatch(cellX, cellY, color);
+        break;
+    }
+    
     this.ctx.globalAlpha = 1.0; // Reset alpha
     
     // SVG path data from Wikimedia Commons Noun Project skull icon

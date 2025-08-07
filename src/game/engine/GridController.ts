@@ -1,4 +1,4 @@
-import { GridState, GridPosition, positionToKey, createGridState, getMostRecentNeighbor } from '../types/grid.js';
+import { GridState, GridPosition, positionToKey, createGridState, getMostRecentNeighbor, SkullMarker } from '../types/grid.js';
 import { GridRenderer } from '../ui/GridRenderer.js';
 import { StatusBar } from '../ui/StatusBar.js';
 import { LevelControls } from '../ui/LevelControls.js';
@@ -163,6 +163,10 @@ export class GridController {
     const key = positionToKey(position);
     this.gridState.neighbors.add(key);
     this.gridState.moveHistory.push(position);
+    
+    // Update which skulls should be actively displayed
+    this.updateActiveSkulls();
+    
     this.updateForbiddenSquares();
     this.updateStatusBar();
     
@@ -177,12 +181,24 @@ export class GridController {
   
   private removeNeighbor(position: GridPosition) {
     const key = positionToKey(position);
+    
+    // Check if we're in a constraint warning state - if so, place a skull at this location
+    const hadConstraintWarning = this.gridState.constraintWarning !== undefined;
+    
     this.gridState.neighbors.delete(key);
     
     // Remove this position from move history
     this.gridState.moveHistory = this.gridState.moveHistory.filter(
       move => !(move.row === position.row && move.col === position.col)
     );
+    
+    // Place skull if we had constraint warnings (dead-end path marker)
+    if (hadConstraintWarning) {
+      this.placeSkull(position);
+    }
+    
+    // Update which skulls should be actively displayed
+    this.updateActiveSkulls();
     
     this.updateForbiddenSquares();
     this.updateStatusBar();
@@ -198,7 +214,6 @@ export class GridController {
     }
     
     this.render();
-    
   }
   
   private showOverconstrainedModal() {
@@ -339,19 +354,29 @@ export class GridController {
   }
 
   private updateForbiddenSquares() {
-    // Combine pre-placed and player-placed neighbors for constraint calculation
+    // First update which skulls should be active
+    this.updateActiveSkulls();
+    
+    // Combine pre-placed, player-placed neighbors for constraint calculation
     const allNeighbors = new Set([
       ...this.gridState.neighbors,
       ...this.gridState.prePlacedNeighbors
     ]);
     
-    this.gridState.forbiddenSquares = this.lineDetector.calculateForbiddenSquares(allNeighbors);
+    // Calculate forbidden squares based on neighbors only (skulls will be added separately)
+    const baseForbiddenSquares = this.lineDetector.calculateForbiddenSquares(allNeighbors);
     
-    // Calculate forced moves
+    // Include active skulls as forbidden squares (they represent dead-end paths)
+    this.gridState.forbiddenSquares = new Set([
+      ...baseForbiddenSquares,
+      ...this.gridState.skulls
+    ]);
+    
+    // Calculate forced moves (excluding skulls from neighbor calculations but including them in forbidden)
     const forcedMoves = this.lineDetector.detectForcedMoves(allNeighbors, this.gridState.forbiddenSquares);
     this.gridState.forcedMoves = new Set(forcedMoves.map(positionToKey));
     
-    // Analyze row/column constraints for unsolvable states
+    // Analyze row/column constraints for unsolvable states (skulls count as obstacles)
     const constraintAnalysis = this.lineDetector.analyzeRowColumnConstraints(
       allNeighbors,
       this.gridState.forbiddenSquares
@@ -380,6 +405,75 @@ export class GridController {
     this.statusBar.updateCounter(remainingNeighbors, this.puzzleState.config.size * 2);
   }
   
+  private placeSkull(position: GridPosition) {
+    const key = positionToKey(position);
+    
+    // Don't place skull if there's already one at this exact position with same dependency chain
+    const existingSkull = this.gridState.skullData.find(
+      skull => positionToKey(skull.position) === key &&
+      this.arraysEqual(skull.dependencyChain, this.gridState.moveHistory)
+    );
+    
+    if (existingSkull) {
+      return;
+    }
+    
+    // Create skull marker with current dependency chain (snapshot of moveHistory)
+    const skull: SkullMarker = {
+      position,
+      dependencyChain: [...this.gridState.moveHistory] // Copy current move history
+    };
+    
+    this.gridState.skullData.push(skull);
+  }
+  
+  private updateActiveSkulls() {
+    // Update which skulls should be actively displayed based on current moveHistory
+    // A skull is active if all its dependency moves are present in current moveHistory
+    
+    const activeSkulls = new Set<string>();
+    
+    for (const skull of this.gridState.skullData) {
+      // Check if all dependency moves are present in current moveHistory
+      const isActive = this.isSkullActive(skull);
+      
+      if (isActive) {
+        activeSkulls.add(positionToKey(skull.position));
+      }
+    }
+    
+    this.gridState.skulls = activeSkulls;
+  }
+  
+  private isSkullActive(skull: SkullMarker): boolean {
+    // A skull is active if all its dependency moves are present in current moveHistory
+    // (not necessarily as a prefix, but all moves must exist)
+    
+    for (const depMove of skull.dependencyChain) {
+      const found = this.gridState.moveHistory.some(
+        currentMove => currentMove.row === depMove.row && currentMove.col === depMove.col
+      );
+      
+      if (!found) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+  
+  private arraysEqual(arr1: GridPosition[], arr2: GridPosition[]): boolean {
+    if (arr1.length !== arr2.length) return false;
+    
+    for (let i = 0; i < arr1.length; i++) {
+      if (arr1[i].row !== arr2[i].row || arr1[i].col !== arr2[i].col) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+  
   private render() {
     this.renderer.updateGridState(this.gridState);
     this.renderer.updateInspectionData(this.getInspectionData());
@@ -392,6 +486,11 @@ export class GridController {
       prePlacedNeighbors: new Set(this.gridState.prePlacedNeighbors),
       forbiddenSquares: new Set(this.gridState.forbiddenSquares),
       forcedMoves: new Set(this.gridState.forcedMoves),
+      skulls: new Set(this.gridState.skulls),
+      skullData: this.gridState.skullData.map(skull => ({
+        position: { ...skull.position },
+        dependencyChain: [...skull.dependencyChain]
+      })),
       moveHistory: [...this.gridState.moveHistory]
     };
   }
@@ -405,6 +504,8 @@ export class GridController {
   
   clearGrid() {
     this.gridState.neighbors.clear();
+    this.gridState.skulls.clear();
+    this.gridState.skullData = [];
     this.gridState.moveHistory = [];
     // Don't clear pre-placed neighbors
     this.updateForbiddenSquares();

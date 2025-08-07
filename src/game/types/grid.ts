@@ -3,12 +3,19 @@ export type GridPosition = {
   col: number;
 };
 
+export type SkullMarker = {
+  position: GridPosition;
+  dependencyChain: GridPosition[]; // Snapshot of moveHistory when skull was created
+};
+
 export type GridState = {
   size: number;
   neighbors: Set<string>;
   prePlacedNeighbors: Set<string>;
   forbiddenSquares: Set<string>;
   forcedMoves: Set<string>;
+  skulls: Set<string>; // Keys of currently active/visible skulls (computed)
+  skullData: SkullMarker[]; // All historical skull data (never deleted)
   moveHistory: GridPosition[];
   constraintWarning?: {
     overConstrainedRows: number[];
@@ -43,6 +50,8 @@ export function createGridState(size: number): GridState {
     prePlacedNeighbors: new Set(),
     forbiddenSquares: new Set(),
     forcedMoves: new Set(),
+    skulls: new Set(), // Computed dynamically
+    skullData: [], // Permanent historical record
     moveHistory: [],
   };
 }
