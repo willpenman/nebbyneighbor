@@ -133,3 +133,11 @@ The game uses a **constraint-based layout system** that eliminates flex layout c
 - Use Unicode smart quotes: " " (U+201C/U+201D) for double quotes, ' ' (U+2018/U+2019) for single quotes
 - Use multiplication sign × (U+00D7) instead of lowercase x for dimensions (e.g., "18×18 grids")
 - These may look nearly identical to ASCII equivalents in many fonts, but the Unicode versions are preferred
+
+**Skull Rendering Architecture:**
+- Skulls are semantically forbidden squares with additional iconography
+- `updateForbiddenSquares()` adds skull positions to `forbiddenSquares` set for constraint logic
+- `drawForbiddenSquares()` renders backgrounds for ALL forbidden positions (including skulls)
+- `drawSkulls()` only adds skull icons on top - backgrounds already rendered
+- AVOID double-rendering: skull backgrounds are handled by forbidden square system, not skull system
+- This separation allows skulls to participate in constraint logic while maintaining clean rendering

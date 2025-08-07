@@ -847,21 +847,22 @@ export class GridRenderer {
   }
   
   private drawSkulls() {
-    // Draw skulls at positions marked as dead-end paths
+    // Draw skull icons at positions marked as dead-end paths
+    // Note: Skull backgrounds are already rendered by drawForbiddenSquares() since
+    // skulls are semantically forbidden squares with additional iconography
     for (const skullKey of this.gridState.skulls) {
       const [row, col] = skullKey.split(',').map(Number);
       const centerX = this.gridOffset.x + this.panOffset.x + (col * this.cellSize) + (this.cellSize / 2);
       const centerY = this.gridOffset.y + this.panOffset.y + (row * this.cellSize) + (this.cellSize / 2);
       
-      this.drawSkull(centerX, centerY, this.cellSize * 0.5, row, col);
+      this.drawSkull(centerX, centerY, this.cellSize * 0.5);
     }
   }
   
-  private drawSkull(centerX: number, centerY: number, size: number, row: number, col: number) {
+  private drawSkull(centerX: number, centerY: number, size: number) {
     this.ctx.save();
     
-    // Draw forbidden square background for the skull using the exact same method as regular forbidden squares
-    this.drawSingleForbiddenSquare(row, col);
+    // Background already rendered by drawForbiddenSquares() - skulls are forbidden squares semantically
     
     // SVG path data from Wikimedia Commons Noun Project skull icon
     // License: CC Attribution 3.0, by Tina Rataj-Berard
