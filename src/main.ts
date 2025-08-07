@@ -51,7 +51,9 @@ async function initializeGame() {
 
     const controller = new GridController(canvas, puzzle.size, {
       onNextLevel: goToNextLevel,
+      onPreviousLevel: goToPreviousLevel,
       getCurrentLevelIndex: () => currentLevelIndex,
+      getTotalLevels: () => getPuzzleCount(),
       hasNextLevel: () => currentLevelIndex < getPuzzleCount() - 1
     });
     controller.loadPuzzle(puzzle);
@@ -67,9 +69,9 @@ async function initializeGame() {
       devOverlay.updateDebugInfo(`Grid: ${puzzle.size}×${puzzle.size}, Pre-placed: ${puzzle.prePlacedNeighbors.length}`);
     }
     
-    // Create navigation buttons if not in dev mode
+    // Add level controls to DOM if not in dev mode
     if (!devOverlay) {
-      createNavigationButtons();
+      addLevelControlsToDom(controller);
     }
     
   } catch (error) {
@@ -184,9 +186,9 @@ function setupDevModeListeners(controller: GridController, devOverlay: DevOverla
   });
 }
 
-function createNavigationButtons() {
-  const app = document.getElementById('app');
-  if (!app) return;
+function addLevelControlsToDom(controller: GridController) {
+  const gameContainer = document.getElementById('game-container');
+  if (!gameContainer) return;
   
   // Remove existing navigation if it exists
   const existingNav = document.getElementById('level-navigation');
@@ -194,85 +196,17 @@ function createNavigationButtons() {
     existingNav.remove();
   }
   
-  // Create navigation container
-  const navContainer = document.createElement('div');
-  navContainer.id = 'level-navigation';
-  navContainer.style.cssText = `
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    margin-top: 1rem;
-    padding: 1rem;
-    flex-shrink: 0;
-  `;
+  // Get level controls from controller and add to DOM
+  const levelControls = controller.getLevelControls();
+  const levelControlsElement = levelControls.getElement();
   
-  // Back button
-  const backButton = document.createElement('button');
-  backButton.textContent = '← Back';
-  backButton.style.cssText = `
-    padding: 0.5rem 1rem;
-    background: #8B7355;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background-color 0.2s;
-  `;
-  backButton.addEventListener('click', goToPreviousLevel);
-  backButton.addEventListener('mouseenter', () => {
-    backButton.style.backgroundColor = '#6d5a43';
-  });
-  backButton.addEventListener('mouseleave', () => {
-    backButton.style.backgroundColor = '#8B7355';
-  });
+  // Append level controls inside the game container (after the canvas)
+  gameContainer.appendChild(levelControlsElement);
   
-  // Forward button
-  const forwardButton = document.createElement('button');
-  forwardButton.textContent = 'Forward →';
-  forwardButton.style.cssText = `
-    padding: 0.5rem 1rem;
-    background: #8B7355;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: background-color 0.2s;
-  `;
-  forwardButton.addEventListener('click', goToNextLevel);
-  forwardButton.addEventListener('mouseenter', () => {
-    forwardButton.style.backgroundColor = '#6d5a43';
-  });
-  forwardButton.addEventListener('mouseleave', () => {
-    forwardButton.style.backgroundColor = '#8B7355';
-  });
-  
-  navContainer.appendChild(backButton);
-  navContainer.appendChild(forwardButton);
-  
-  // Add navigation after the main game container
-  const gameContainer = document.getElementById('game-container');
-  if (gameContainer && gameContainer.parentNode) {
-    gameContainer.parentNode.insertBefore(navContainer, gameContainer.nextSibling);
-  }
-  
-  updateNavigationVisibility();
+  // Initial visibility update
+  levelControls.updateVisibility();
 }
 
-function updateNavigationVisibility() {
-  const navContainer = document.getElementById('level-navigation');
-  if (!navContainer) return;
-  
-  const backButton = navContainer.children[0] as HTMLButtonElement;
-  const forwardButton = navContainer.children[1] as HTMLButtonElement;
-  
-  // Hide back button if on first level
-  backButton.style.visibility = currentLevelIndex === 0 ? 'hidden' : 'visible';
-  
-  // Hide forward button if on last level
-  forwardButton.style.visibility = currentLevelIndex === getPuzzleCount() - 1 ? 'hidden' : 'visible';
-}
 
 function goToPreviousLevel() {
   if (currentLevelIndex > 0) {
@@ -298,10 +232,9 @@ function loadCurrentLevel() {
     canvas.setAttribute('aria-label', `${puzzle.size}x${puzzle.size} grid puzzle - click cells to place neighbors`);
   }
   
-  // Load puzzle (this handles size changes automatically)
+  // Load puzzle (this handles size changes automatically and updates level controls)
   currentController.loadPuzzle(puzzle);
   
-  updateNavigationVisibility();
   console.log(`Loaded level ${currentLevelIndex + 1}: ${puzzle.id}`);
 }
 

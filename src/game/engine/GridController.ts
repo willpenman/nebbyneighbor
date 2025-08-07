@@ -1,6 +1,7 @@
 import { GridState, GridPosition, positionToKey, createGridState, getMostRecentNeighbor } from '../types/grid.js';
 import { GridRenderer } from '../ui/GridRenderer.js';
 import { StatusBar } from '../ui/StatusBar.js';
+import { LevelControls } from '../ui/LevelControls.js';
 import { Modal } from '../ui/Modal.js';
 import { PuzzleConfig, PuzzleState } from '../types/puzzle.js';
 import { LineDetector, InspectionData, ForbiddenSquareInfo } from './LineDetector.js';
@@ -9,15 +10,24 @@ export class GridController {
   private gridState: GridState;
   private renderer: GridRenderer;
   private statusBar: StatusBar;
+  private levelControls: LevelControls;
   private modal: Modal;
   private canvas: HTMLCanvasElement;
   private puzzleState: PuzzleState | null = null;
   private lineDetector: LineDetector;
   private onNextLevel?: () => void;
+  private onPreviousLevel?: () => void;
   private getCurrentLevelIndex?: () => number;
+  private getTotalLevels?: () => number;
   private hasNextLevel?: () => boolean;
   
-  constructor(canvas: HTMLCanvasElement, size: number = 4, callbacks?: { onNextLevel?: () => void, getCurrentLevelIndex?: () => number, hasNextLevel?: () => boolean }) {
+  constructor(canvas: HTMLCanvasElement, size: number = 4, callbacks?: { 
+    onNextLevel?: () => void, 
+    onPreviousLevel?: () => void,
+    getCurrentLevelIndex?: () => number, 
+    getTotalLevels?: () => number,
+    hasNextLevel?: () => boolean 
+  }) {
     this.gridState = createGridState(size);
     this.canvas = canvas;
     this.renderer = new GridRenderer(canvas, this.gridState);
@@ -25,12 +35,25 @@ export class GridController {
     
     // Store navigation callbacks
     this.onNextLevel = callbacks?.onNextLevel;
+    this.onPreviousLevel = callbacks?.onPreviousLevel;
     this.getCurrentLevelIndex = callbacks?.getCurrentLevelIndex;
+    this.getTotalLevels = callbacks?.getTotalLevels;
     this.hasNextLevel = callbacks?.hasNextLevel;
     
-    // Set up callback to sync status bar width with grid width
+    // Initialize level controls
+    this.levelControls = new LevelControls({
+      onNextLevel: this.onNextLevel,
+      onPreviousLevel: this.onPreviousLevel,
+      getCurrentLevelIndex: this.getCurrentLevelIndex,
+      getTotalLevels: this.getTotalLevels
+    });
+    
+    // Set up callbacks to sync status bar and level controls width with grid width
     this.renderer.setGridWidthCallback((width: number) => {
       this.statusBar.setWidth(width);
+    });
+    this.renderer.setLevelControlsWidthCallback((width: number) => {
+      this.levelControls.setWidth(width);
     });
     this.modal = new Modal();
     this.lineDetector = new LineDetector(size);
@@ -412,6 +435,9 @@ export class GridController {
     // Update status bar with new puzzle
     this.statusBar.updateLevel(puzzleConfig);
     
+    // Update level controls visibility
+    this.levelControls.updateVisibility();
+    
     this.updateForbiddenSquares();
     this.updateStatusBar();
     
@@ -465,6 +491,10 @@ export class GridController {
   
   getStatusBar(): StatusBar {
     return this.statusBar;
+  }
+
+  getLevelControls(): LevelControls {
+    return this.levelControls;
   }
   
   getModal(): Modal {

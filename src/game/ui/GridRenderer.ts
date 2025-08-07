@@ -18,6 +18,7 @@ export class GridRenderer {
   private static readonly PAN_THRESHOLD = 10; // pixels
   private gridWidth: number = 0;
   private onGridWidthChange?: (width: number) => void;
+  private onLevelControlsWidthChange?: (width: number) => void;
   private lineStyles = {
     solidLineColor: '#8B7355',    // Soft organic default
     dashedLineColor: '#A67C5A',   // Companion shade
@@ -75,8 +76,9 @@ export class GridRenderer {
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     
-    // Status bar height (only constraint that matters for maximum sizing)
-    const statusBarHeight = 60; // Approximate fixed height
+    // UI component heights
+    const statusBarHeight = 60; // Fixed height from StatusBar
+    const levelControlsHeight = 60; // Fixed height from LevelControls
     
     // App and container padding (from CSS: both 10px desktop, 5px mobile)
     const appPadding = window.innerWidth <= 480 ? 5 : 10;
@@ -84,11 +86,12 @@ export class GridRenderer {
     
     // Available space for the canvas within the app and game container
     const availableWidth = viewportWidth - (appPadding * 2) - (containerPadding * 2); // Canvas fits within all padding
-    const availableHeight = viewportHeight - statusBarHeight; // Canvas uses full height minus status bar
+    const availableHeight = viewportHeight - statusBarHeight - levelControlsHeight; // Canvas uses remaining height
     
     // Account for padding within the canvas (visual breathing room around grid)
     const canvasPadding = 20;
     const topPadding = 0; // No padding on top so grid touches status bar
+    const bottomPadding = 0; // No padding on bottom so grid touches level controls
     
     // Determine constraining dimension
     let maxGridSize: number;
@@ -98,7 +101,7 @@ export class GridRenderer {
       maxGridSize = availableWidth - (canvasPadding * 2);
     } else {
       // Wide screen: height constrains  
-      maxGridSize = availableHeight - topPadding - canvasPadding; // Only bottom padding
+      maxGridSize = availableHeight - topPadding - bottomPadding; // No bottom padding
     }
     
     // Calculate cell size
@@ -123,7 +126,7 @@ export class GridRenderer {
     
     if (availableWidth < availableHeight) {
       // Narrow screen: width constrains, so canvas height only needs to fit the grid
-      canvasHeight = gridHeight + topPadding + canvasPadding;
+      canvasHeight = gridHeight + topPadding + bottomPadding;
     } else {
       // Wide screen: height constrains, so canvas uses full available height
       canvasHeight = availableHeight;
@@ -150,9 +153,12 @@ export class GridRenderer {
     // Set cursor
     this.canvas.style.cursor = this.isScrollable ? 'grab' : 'pointer';
     
-    // Notify status bar of grid width
+    // Notify status bar and level controls of grid width
     if (this.onGridWidthChange) {
       this.onGridWidthChange(this.gridWidth);
+    }
+    if (this.onLevelControlsWidthChange) {
+      this.onLevelControlsWidthChange(this.gridWidth);
     }
     
     console.log(`Viewport: ${viewportWidth}×${viewportHeight}, Canvas: ${canvasWidth}×${canvasHeight}, Grid: ${this.gridWidth}×${gridHeight}, Cell: ${this.cellSize}px, Scrollable: ${this.isScrollable}`);
@@ -1166,5 +1172,9 @@ export class GridRenderer {
   
   setGridWidthCallback(callback: (width: number) => void) {
     this.onGridWidthChange = callback;
+  }
+
+  setLevelControlsWidthCallback(callback: (width: number) => void) {
+    this.onLevelControlsWidthChange = callback;
   }
 }
