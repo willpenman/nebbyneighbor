@@ -351,32 +351,36 @@ export class GridRenderer {
       return;
     }
 
+    for (const squareKey of this.gridState.forbiddenSquares) {
+      const [row, col] = squareKey.split(',').map(Number);
+      this.drawSingleForbiddenSquare(row, col);
+    }
+  }
+
+  private drawSingleForbiddenSquare(row: number, col: number) {
     const style = this.theme.forbiddenSquareStyle;
     const color = this.theme.forbiddenSquareColor;
     const opacity = this.theme.forbiddenSquareOpacity;
 
-    for (const squareKey of this.gridState.forbiddenSquares) {
-      const [row, col] = squareKey.split(',').map(Number);
-      const x = this.gridOffset.x + this.panOffset.x + (col * this.cellSize);
-      const y = this.gridOffset.y + this.panOffset.y + (row * this.cellSize);
+    const x = this.gridOffset.x + this.panOffset.x + (col * this.cellSize);
+    const y = this.gridOffset.y + this.panOffset.y + (row * this.cellSize);
 
-      this.ctx.save();
-      this.ctx.globalAlpha = opacity;
+    this.ctx.save();
+    this.ctx.globalAlpha = opacity;
 
-      switch (style) {
-        case 'forbidden-overlay':
-          this.drawForbiddenOverlay(x, y, color);
-          break;
-        case 'grid-fade':
-          this.drawGridFade(x, y, color);
-          break;
-        case 'cross-hatch':
-          this.drawCrossHatch(x, y, color);
-          break;
-      }
-
-      this.ctx.restore();
+    switch (style) {
+      case 'forbidden-overlay':
+        this.drawForbiddenOverlay(x, y, color);
+        break;
+      case 'grid-fade':
+        this.drawGridFade(x, y, color);
+        break;
+      case 'cross-hatch':
+        this.drawCrossHatch(x, y, color);
+        break;
     }
+
+    this.ctx.restore();
   }
 
   private drawForbiddenOverlay(x: number, y: number, color: string) {
@@ -856,30 +860,8 @@ export class GridRenderer {
   private drawSkull(centerX: number, centerY: number, size: number, row: number, col: number) {
     this.ctx.save();
     
-    // Draw forbidden square background for the skull using the same style as other forbidden squares
-    const cellX = this.gridOffset.x + this.panOffset.x + (col * this.cellSize);
-    const cellY = this.gridOffset.y + this.panOffset.y + (row * this.cellSize);
-    
-    // Use the same forbidden square styling as the rest of the grid
-    const style = this.theme.forbiddenSquareStyle;
-    const color = this.theme.forbiddenSquareColor;
-    
-    this.ctx.globalAlpha = this.theme.forbiddenSquareOpacity;
-    
-    // Apply the same forbidden square style logic
-    switch (style) {
-      case 'forbidden-overlay':
-        this.drawForbiddenOverlay(cellX, cellY, color);
-        break;
-      case 'grid-fade':
-        this.drawGridFade(cellX, cellY, color);
-        break;
-      case 'cross-hatch':
-        this.drawCrossHatch(cellX, cellY, color);
-        break;
-    }
-    
-    this.ctx.globalAlpha = 1.0; // Reset alpha
+    // Draw forbidden square background for the skull using the exact same method as regular forbidden squares
+    this.drawSingleForbiddenSquare(row, col);
     
     // SVG path data from Wikimedia Commons Noun Project skull icon
     // License: CC Attribution 3.0, by Tina Rataj-Berard
