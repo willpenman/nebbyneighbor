@@ -408,17 +408,32 @@ export class GridController {
   private placeDeadEnd(position: GridPosition) {
     const key = positionToKey(position);
     
-    // Don't place deadEnd if there's already one at this exact position with same dependency chain
-    const existingDeadEnd = this.gridState.deadEndData.find(
-      deadEnd => positionToKey(deadEnd.position) === key &&
-      this.arraysEqual(deadEnd.dependencyChain, this.gridState.moveHistory)
+    // Check for existing dead end at this position
+    const existingDeadEndIndex = this.gridState.deadEndData.findIndex(
+      deadEnd => positionToKey(deadEnd.position) === key
     );
     
-    if (existingDeadEnd) {
+    if (existingDeadEndIndex !== -1) {
+      const existingDeadEnd = this.gridState.deadEndData[existingDeadEndIndex];
+      
+      // If same dependency chain, no need to update
+      if (this.arraysEqual(existingDeadEnd.dependencyChain, this.gridState.moveHistory)) {
+        return;
+      }
+      
+      // If current move history is shorter (bubble up scenario), update the dependency chain
+      if (this.gridState.moveHistory.length < existingDeadEnd.dependencyChain.length) {
+        existingDeadEnd.dependencyChain = [...this.gridState.moveHistory];
+      }
+      // If current move history is longer, we should still update to current chain
+      // because this represents a new path to the same dead end
+      else {
+        existingDeadEnd.dependencyChain = [...this.gridState.moveHistory];
+      }
       return;
     }
     
-    // Create deadEnd marker with current dependency chain (snapshot of moveHistory)
+    // Create new deadEnd marker with current dependency chain
     const deadEnd: DeadEndMarker = {
       position,
       dependencyChain: [...this.gridState.moveHistory] // Copy current move history

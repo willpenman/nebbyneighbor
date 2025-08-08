@@ -937,15 +937,15 @@ export class GridRenderer {
       quintile = 0; // 0-10% - darkest (deep exploration)
     }
     
-    // 5-color dark-gray to light-gray gradient
-    // SHORTER chains = DEEPER exploration = DARKER colors (more achievement)
-    // LONGER chains = SHALLOWER exploration = LIGHTER colors (less achievement)
+    // 5-color strong gradient with brown tint - maintains contrast while matching game theme
+    // SHORTER chains = DEEPER exploration = MUCH DARKER colors (more achievement)
+    // LONGER chains = SHALLOWER exploration = MUCH LIGHTER colors (less achievement)
     const colors = [
-      '#505050', // Quintile 0: Very dark gray - deep exploration (short chain)
-      '#707070', // Quintile 1: Dark gray
-      '#909090', // Quintile 2: Medium gray (middle)
-      '#B0B0B0', // Quintile 3: Medium-light gray  
-      '#D0D0D0'  // Quintile 4: Light gray - shallow exploration (long chain)
+      '#2B1F1A', // Quintile 0: Very dark brown-gray - deep exploration (short chain)
+      '#4A3B32', // Quintile 1: Dark brown-gray
+      '#8B7B6A', // Quintile 2: Medium brown-gray (middle)
+      '#C4B8A8', // Quintile 3: Light brown-gray  
+      '#E8E0D2'  // Quintile 4: Very light brown-beige - shallow exploration (long chain)
     ];
     
     return {
