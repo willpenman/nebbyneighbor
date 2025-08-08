@@ -852,11 +852,18 @@ export class GridRenderer {
     // dead ends are semantically forbidden squares with additional iconography
     for (const deadEndKey of this.gridState.deadEnds) {
       const [row, col] = deadEndKey.split(',').map(Number);
-      this.drawDeadEndXMarks(row, col);
+      
+      // Find the corresponding dead end data to get dependency chain length
+      const deadEndData = this.gridState.deadEndData.find(
+        data => positionToKey(data.position) === deadEndKey
+      );
+      const chainLength = deadEndData ? deadEndData.dependencyChain.length : 0;
+      
+      this.drawDeadEndXMarks(row, col, chainLength);
     }
   }
   
-  private drawDeadEndXMarks(row: number, col: number) {
+  private drawDeadEndXMarks(row: number, col: number, chainLength: number = 0) {
     this.ctx.save();
     
     // Calculate cell position
@@ -864,9 +871,10 @@ export class GridRenderer {
     const cellY = this.gridOffset.y + this.panOffset.y + (row * this.cellSize);
     
     // Draw small X marks to indicate dead-end paths - clear "blocked/warning" signal
-    const xSize = this.cellSize * 0.08; // Size of each X mark
-    const xSpacing = this.cellSize * 0.18; // Space between X centers
-    const xColor = '#8B6F47'; // Darker organic brown for clear visibility
+    const deadEndStyle = this.getDeadEndStyle(chainLength);
+    const xSize = deadEndStyle.size;
+    const xSpacing = this.cellSize * 0.18; // Space between X centers  
+    const xColor = deadEndStyle.color;
     const lineWidth = Math.max(1, this.cellSize * 0.01); // Proportional line weight
     
     this.ctx.strokeStyle = xColor;
@@ -897,6 +905,53 @@ export class GridRenderer {
     }
     
     this.ctx.restore();
+  }
+  
+  private getDeadEndStyle(chainLength: number): { color: string; size: number } {
+    // Calculate total neighbors that need to be placed: 2n - 3 
+    // (since significant grids have 3+ pre-placed neighbors)
+    const totalNeighborsToPlace = (this.gridState.size * 2) - 3;
+    
+    // Handle edge cases
+    if (totalNeighborsToPlace <= 0 || chainLength <= 0) {
+      return {
+        color: '#505050', // Darkest gray for minimal exploration (deepest achievement)
+        size: this.cellSize * 0.08 // Original size
+      };
+    }
+    
+    // Calculate which quintile this chain length falls into (0-4)
+    // Adjusted buckets: 0-10%, 10-25%, 25-40%, 40-60%, 60%+
+    // On an 8×8 grid, with 3 assumed pre-placed neighbors, this gives new shade every 2 moves for first 8: (0-1)(2-3)(4-5)(6-7), then 8-13
+    const percentage = (chainLength / totalNeighborsToPlace) * 100;
+    let quintile: number;
+    if (percentage >= 60) {
+      quintile = 4; // 60%+ - lightest (shallow exploration)
+    } else if (percentage >= 40) {
+      quintile = 3; // 40-60%
+    } else if (percentage >= 25) {
+      quintile = 2; // 25-40%
+    } else if (percentage >= 10) {
+      quintile = 1; // 10-25%
+    } else {
+      quintile = 0; // 0-10% - darkest (deep exploration)
+    }
+    
+    // 5-color dark-gray to light-gray gradient
+    // SHORTER chains = DEEPER exploration = DARKER colors (more achievement)
+    // LONGER chains = SHALLOWER exploration = LIGHTER colors (less achievement)
+    const colors = [
+      '#505050', // Quintile 0: Very dark gray - deep exploration (short chain)
+      '#707070', // Quintile 1: Dark gray
+      '#909090', // Quintile 2: Medium gray (middle)
+      '#B0B0B0', // Quintile 3: Medium-light gray  
+      '#D0D0D0'  // Quintile 4: Light gray - shallow exploration (long chain)
+    ];
+    
+    return {
+      color: colors[quintile],
+      size: this.cellSize * 0.08 // All X marks same size (original)
+    };
   }
   
   private drawConstraintWarnings() {
