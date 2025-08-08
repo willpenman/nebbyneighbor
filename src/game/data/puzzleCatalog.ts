@@ -4,6 +4,7 @@ import { SymmetryClass } from '../types/puzzle.js';
 // Compressed puzzle data - each line represents one puzzle
 // Format: {puzzleNumber}{symmetryClass}{column1Data};{column2Data};...
 const COMPRESSED_PUZZLES = [
+  '0/0;;;;;2;0;', // Test puzzle matching level 45 for design exploration
   '1*;',
   '2x;;2',
   '3-;1;1;',

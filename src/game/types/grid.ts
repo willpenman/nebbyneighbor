@@ -3,9 +3,9 @@ export type GridPosition = {
   col: number;
 };
 
-export type SkullMarker = {
+export type DeadEndMarker = {
   position: GridPosition;
-  dependencyChain: GridPosition[]; // Snapshot of moveHistory when skull was created
+  dependencyChain: GridPosition[]; // Snapshot of moveHistory when dead end was created
 };
 
 export type GridState = {
@@ -14,8 +14,8 @@ export type GridState = {
   prePlacedNeighbors: Set<string>;
   forbiddenSquares: Set<string>;
   forcedMoves: Set<string>;
-  skulls: Set<string>; // Keys of currently active/visible skulls (computed)
-  skullData: SkullMarker[]; // All historical skull data (never deleted)
+  deadEnds: Set<string>; // Keys of currently active/visible dead ends (computed)
+  deadEndData: DeadEndMarker[]; // All historical dead end data (never deleted)
   moveHistory: GridPosition[];
   constraintWarning?: {
     overConstrainedRows: number[];
@@ -50,8 +50,8 @@ export function createGridState(size: number): GridState {
     prePlacedNeighbors: new Set(),
     forbiddenSquares: new Set(),
     forcedMoves: new Set(),
-    skulls: new Set(), // Computed dynamically
-    skullData: [], // Permanent historical record
+    deadEnds: new Set(), // Computed dynamically
+    deadEndData: [], // Permanent historical record
     moveHistory: [],
   };
 }

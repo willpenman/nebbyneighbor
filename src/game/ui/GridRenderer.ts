@@ -306,7 +306,7 @@ export class GridRenderer {
     this.drawGrid();
     this.drawForbiddenSquares();
     this.drawForcedMoves();
-    this.drawSkulls();
+    this.drawDeadEndMarkers();
     this.drawNeighbors();
     this.drawConstraintLines();
     this.drawConstraintWarnings();
@@ -846,48 +846,55 @@ export class GridRenderer {
     this.render();
   }
   
-  private drawSkulls() {
-    // Draw skull icons at positions marked as dead-end paths
-    // Note: Skull backgrounds are already rendered by drawForbiddenSquares() since
-    // skulls are semantically forbidden squares with additional iconography
-    for (const skullKey of this.gridState.skulls) {
-      const [row, col] = skullKey.split(',').map(Number);
-      const centerX = this.gridOffset.x + this.panOffset.x + (col * this.cellSize) + (this.cellSize / 2);
-      const centerY = this.gridOffset.y + this.panOffset.y + (row * this.cellSize) + (this.cellSize / 2);
-      
-      this.drawSkull(centerX, centerY, this.cellSize * 0.5);
+  private drawDeadEndMarkers() {
+    // Draw X mark patterns for dead-end paths
+    // Note: Dead end backgrounds are already rendered by drawForbiddenSquares() since
+    // dead ends are semantically forbidden squares with additional iconography
+    for (const deadEndKey of this.gridState.deadEnds) {
+      const [row, col] = deadEndKey.split(',').map(Number);
+      this.drawDeadEndXMarks(row, col);
     }
   }
   
-  private drawSkull(centerX: number, centerY: number, size: number) {
+  private drawDeadEndXMarks(row: number, col: number) {
     this.ctx.save();
     
-    // Background already rendered by drawForbiddenSquares() - skulls are forbidden squares semantically
+    // Calculate cell position
+    const cellX = this.gridOffset.x + this.panOffset.x + (col * this.cellSize);
+    const cellY = this.gridOffset.y + this.panOffset.y + (row * this.cellSize);
     
-    // SVG path data from Wikimedia Commons Noun Project skull icon
-    // License: CC Attribution 3.0, by Tina Rataj-Berard
-    const skullPath = "M43.37,0C16.896,0-5.549,26.081,1.218,51.672c1.647,6.234,3.383,11.955,5.402,17.072c-3.196,3.552-1.815,10.411,1.226,13.722c1.865,2.029,6.032,5.518,9.528,6.938c2.828-0.414,11.101-0.88,10.589,7.873c0.959,0.39,1.963,0.728,2.998,1.034V94.85h1.247v3.802c1.676,0.427,3.429,0.758,5.256,0.979V94.85h1.243v4.903C40.4,99.913,42.136,100,43.919,100c0.015,0,0.031,0,0.046,0v-5.152h1.245v5.128c1.774-0.038,3.514-0.146,5.188-0.349v-4.779h1.248v4.6c1.739-0.257,3.409-0.608,4.999-1.062V94.85h1.245v3.151c0.715-0.236,1.411-0.485,2.086-0.765c-1.391-10.938,9.662-9.106,11.232-8.793c3.615-1.213,8.2-5.032,10.183-7.188c3.163-3.438,4.545-10.73,0.835-14.137c-0.125-0.115-0.27-0.195-0.401-0.307c1.378-4.01,2.595-8.402,3.726-13.186C91.63,27.862,69.843,0,43.37,0z M33.221,65.608c-4.549,3.296-9.491,9.647-15.556,5.962c-6.067-3.685-6.207-17.21-2.647-22.577c3.057-4.613,20.582-3.497,22.839,0.374C40.115,53.237,37.769,62.312,33.221,65.608z M49.393,81.858c-0.558,1.679-4.028-0.53-5.582-1.622c-1.552,1.092-5.024,3.302-5.583,1.622c-0.724-2.175,3.802-15.734,4.347-16.829c0.162-0.326,0.405-0.605,0.664-0.808c0.13-0.214,0.316-0.299,0.532-0.278c0.015-0.003,0.026,0.002,0.041,0c0.014,0.002,0.026-0.003,0.041,0c0.216-0.021,0.402,0.065,0.533,0.279c0.26,0.201,0.502,0.48,0.661,0.807C45.589,66.123,50.118,79.684,49.393,81.858z M70.974,70.491c-5.808,4.079-11.162-1.931-15.919-4.913c-4.76-2.982-7.702-11.885-5.704-15.898c1.994-4.011,19.407-6.292,22.764-1.895C76.02,52.905,76.778,66.408,70.974,70.491z";
+    // Draw small X marks to indicate dead-end paths - clear "blocked/warning" signal
+    const xSize = this.cellSize * 0.08; // Size of each X mark
+    const xSpacing = this.cellSize * 0.18; // Space between X centers
+    const xColor = '#8B6F47'; // Darker organic brown for clear visibility
+    const lineWidth = Math.max(1, this.cellSize * 0.01); // Proportional line weight
     
-    // Create Path2D object from SVG path data
-    const path = new Path2D(skullPath);
+    this.ctx.strokeStyle = xColor;
+    this.ctx.lineWidth = lineWidth;
+    this.ctx.lineCap = 'round';
     
-    // Calculate scaling to fit desired size
-    // Original SVG dimensions: 86.577px × 100px
-    const originalWidth = 86.577;
-    const originalHeight = 100;
-    const scale = size / Math.max(originalWidth, originalHeight);
+    // Create a grid of X marks centered within the cell
+    const numMarksPerSide = Math.floor(this.cellSize / xSpacing);
+    const totalWidth = (numMarksPerSide - 1) * xSpacing;
+    const startOffsetX = (this.cellSize - totalWidth) / 2;
+    const startOffsetY = (this.cellSize - totalWidth) / 2;
     
-    // Center the skull at the specified position
-    const offsetX = centerX - (originalWidth * scale) / 2;
-    const offsetY = centerY - (originalHeight * scale) / 2;
-    
-    // Apply transformations
-    this.ctx.translate(offsetX, offsetY);
-    this.ctx.scale(scale, scale);
-    
-    // Draw skull with soft organic theme color
-    this.ctx.fillStyle = '#8B7355'; // Match neighbor color from soft organic theme
-    this.ctx.fill(path);
+    for (let i = 0; i < numMarksPerSide; i++) {
+      for (let j = 0; j < numMarksPerSide; j++) {
+        const x = startOffsetX + (i * xSpacing);
+        const y = startOffsetY + (j * xSpacing);
+        
+        // Draw X: two diagonal lines crossing
+        this.ctx.beginPath();
+        // First diagonal (\)
+        this.ctx.moveTo(cellX + x - xSize/2, cellY + y - xSize/2);
+        this.ctx.lineTo(cellX + x + xSize/2, cellY + y + xSize/2);
+        // Second diagonal (/)
+        this.ctx.moveTo(cellX + x - xSize/2, cellY + y + xSize/2);
+        this.ctx.lineTo(cellX + x + xSize/2, cellY + y - xSize/2);
+        this.ctx.stroke();
+      }
+    }
     
     this.ctx.restore();
   }

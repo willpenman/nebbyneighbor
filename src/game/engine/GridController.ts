@@ -1,4 +1,4 @@
-import { GridState, GridPosition, positionToKey, createGridState, getMostRecentNeighbor, SkullMarker } from '../types/grid.js';
+import { GridState, GridPosition, positionToKey, createGridState, getMostRecentNeighbor, DeadEndMarker } from '../types/grid.js';
 import { GridRenderer } from '../ui/GridRenderer.js';
 import { StatusBar } from '../ui/StatusBar.js';
 import { LevelControls } from '../ui/LevelControls.js';
@@ -164,8 +164,8 @@ export class GridController {
     this.gridState.neighbors.add(key);
     this.gridState.moveHistory.push(position);
     
-    // Update which skulls should be actively displayed
-    this.updateActiveSkulls();
+    // Update which deadEnds should be actively displayed
+    this.updateActiveDeadEnds();
     
     this.updateForbiddenSquares();
     this.updateStatusBar();
@@ -182,7 +182,7 @@ export class GridController {
   private removeNeighbor(position: GridPosition) {
     const key = positionToKey(position);
     
-    // Check if we're in a constraint warning state - if so, place a skull at this location
+    // Check if we're in a constraint warning state - if so, place a deadEnd at this location
     const hadConstraintWarning = this.gridState.constraintWarning !== undefined;
     
     this.gridState.neighbors.delete(key);
@@ -192,13 +192,13 @@ export class GridController {
       move => !(move.row === position.row && move.col === position.col)
     );
     
-    // Place skull if we had constraint warnings (dead-end path marker)
+    // Place deadEnd if we had constraint warnings (dead-end path marker)
     if (hadConstraintWarning) {
-      this.placeSkull(position);
+      this.placeDeadEnd(position);
     }
     
-    // Update which skulls should be actively displayed
-    this.updateActiveSkulls();
+    // Update which deadEnds should be actively displayed
+    this.updateActiveDeadEnds();
     
     this.updateForbiddenSquares();
     this.updateStatusBar();
@@ -354,8 +354,8 @@ export class GridController {
   }
 
   private updateForbiddenSquares() {
-    // First update which skulls should be active
-    this.updateActiveSkulls();
+    // First update which deadEnds should be active
+    this.updateActiveDeadEnds();
     
     // Combine pre-placed, player-placed neighbors for constraint calculation
     const allNeighbors = new Set([
@@ -363,20 +363,20 @@ export class GridController {
       ...this.gridState.prePlacedNeighbors
     ]);
     
-    // Calculate forbidden squares based on neighbors only (skulls will be added separately)
+    // Calculate forbidden squares based on neighbors only (deadEnds will be added separately)
     const baseForbiddenSquares = this.lineDetector.calculateForbiddenSquares(allNeighbors);
     
-    // Include active skulls as forbidden squares (they represent dead-end paths)
+    // Include active deadEnds as forbidden squares (they represent dead-end paths)
     this.gridState.forbiddenSquares = new Set([
       ...baseForbiddenSquares,
-      ...this.gridState.skulls
+      ...this.gridState.deadEnds
     ]);
     
-    // Calculate forced moves (excluding skulls from neighbor calculations but including them in forbidden)
+    // Calculate forced moves (excluding deadEnds from neighbor calculations but including them in forbidden)
     const forcedMoves = this.lineDetector.detectForcedMoves(allNeighbors, this.gridState.forbiddenSquares);
     this.gridState.forcedMoves = new Set(forcedMoves.map(positionToKey));
     
-    // Analyze row/column constraints for unsolvable states (skulls count as obstacles)
+    // Analyze row/column constraints for unsolvable states (deadEnds count as obstacles)
     const constraintAnalysis = this.lineDetector.analyzeRowColumnConstraints(
       allNeighbors,
       this.gridState.forbiddenSquares
@@ -405,51 +405,51 @@ export class GridController {
     this.statusBar.updateCounter(remainingNeighbors, this.puzzleState.config.size * 2);
   }
   
-  private placeSkull(position: GridPosition) {
+  private placeDeadEnd(position: GridPosition) {
     const key = positionToKey(position);
     
-    // Don't place skull if there's already one at this exact position with same dependency chain
-    const existingSkull = this.gridState.skullData.find(
-      skull => positionToKey(skull.position) === key &&
-      this.arraysEqual(skull.dependencyChain, this.gridState.moveHistory)
+    // Don't place deadEnd if there's already one at this exact position with same dependency chain
+    const existingDeadEnd = this.gridState.deadEndData.find(
+      deadEnd => positionToKey(deadEnd.position) === key &&
+      this.arraysEqual(deadEnd.dependencyChain, this.gridState.moveHistory)
     );
     
-    if (existingSkull) {
+    if (existingDeadEnd) {
       return;
     }
     
-    // Create skull marker with current dependency chain (snapshot of moveHistory)
-    const skull: SkullMarker = {
+    // Create deadEnd marker with current dependency chain (snapshot of moveHistory)
+    const deadEnd: DeadEndMarker = {
       position,
       dependencyChain: [...this.gridState.moveHistory] // Copy current move history
     };
     
-    this.gridState.skullData.push(skull);
+    this.gridState.deadEndData.push(deadEnd);
   }
   
-  private updateActiveSkulls() {
-    // Update which skulls should be actively displayed based on current moveHistory
-    // A skull is active if all its dependency moves are present in current moveHistory
+  private updateActiveDeadEnds() {
+    // Update which deadEnds should be actively displayed based on current moveHistory
+    // A deadEnd is active if all its dependency moves are present in current moveHistory
     
-    const activeSkulls = new Set<string>();
+    const activeDeadEnds = new Set<string>();
     
-    for (const skull of this.gridState.skullData) {
+    for (const deadEnd of this.gridState.deadEndData) {
       // Check if all dependency moves are present in current moveHistory
-      const isActive = this.isSkullActive(skull);
+      const isActive = this.isDeadEndActive(deadEnd);
       
       if (isActive) {
-        activeSkulls.add(positionToKey(skull.position));
+        activeDeadEnds.add(positionToKey(deadEnd.position));
       }
     }
     
-    this.gridState.skulls = activeSkulls;
+    this.gridState.deadEnds = activeDeadEnds;
   }
   
-  private isSkullActive(skull: SkullMarker): boolean {
-    // A skull is active if all its dependency moves are present in current moveHistory
+  private isDeadEndActive(deadEnd: DeadEndMarker): boolean {
+    // A deadEnd is active if all its dependency moves are present in current moveHistory
     // (not necessarily as a prefix, but all moves must exist)
     
-    for (const depMove of skull.dependencyChain) {
+    for (const depMove of deadEnd.dependencyChain) {
       const found = this.gridState.moveHistory.some(
         currentMove => currentMove.row === depMove.row && currentMove.col === depMove.col
       );
@@ -486,10 +486,10 @@ export class GridController {
       prePlacedNeighbors: new Set(this.gridState.prePlacedNeighbors),
       forbiddenSquares: new Set(this.gridState.forbiddenSquares),
       forcedMoves: new Set(this.gridState.forcedMoves),
-      skulls: new Set(this.gridState.skulls),
-      skullData: this.gridState.skullData.map(skull => ({
-        position: { ...skull.position },
-        dependencyChain: [...skull.dependencyChain]
+      deadEnds: new Set(this.gridState.deadEnds),
+      deadEndData: this.gridState.deadEndData.map(deadEnd => ({
+        position: { ...deadEnd.position },
+        dependencyChain: [...deadEnd.dependencyChain]
       })),
       moveHistory: [...this.gridState.moveHistory]
     };
@@ -504,8 +504,8 @@ export class GridController {
   
   clearGrid() {
     this.gridState.neighbors.clear();
-    this.gridState.skulls.clear();
-    this.gridState.skullData = [];
+    this.gridState.deadEnds.clear();
+    this.gridState.deadEndData = [];
     this.gridState.moveHistory = [];
     // Don't clear pre-placed neighbors
     this.updateForbiddenSquares();
