@@ -367,9 +367,10 @@ export class GridController {
     const baseForbiddenSquares = this.lineDetector.calculateForbiddenSquares(allNeighbors);
     
     // Include active deadEnds as forbidden squares (they represent dead-end paths)
+    const deadEndKeys = this.gridState.deadEnds.map(deadEnd => positionToKey(deadEnd.position));
     this.gridState.forbiddenSquares = new Set([
       ...baseForbiddenSquares,
-      ...this.gridState.deadEnds
+      ...deadEndKeys
     ]);
     
     // Calculate forced moves (excluding deadEnds from neighbor calculations but including them in forbidden)
@@ -406,37 +407,37 @@ export class GridController {
   }
   
   private placeDeadEnd(position: GridPosition) {
-    const key = positionToKey(position);
+    // Convert current move history to set of position keys
+    const currentMoveSet = new Set(this.gridState.moveHistory.map(pos => positionToKey(pos)));
     
-    // Check for existing dead end at this position
+    // Check for existing dead end with the same dependency set (not just same position)
     const existingDeadEndIndex = this.gridState.deadEndData.findIndex(
-      deadEnd => positionToKey(deadEnd.position) === key
+      deadEnd => this.setsEqual(deadEnd.dependencyChain, currentMoveSet)
     );
     
     if (existingDeadEndIndex !== -1) {
-      const existingDeadEnd = this.gridState.deadEndData[existingDeadEndIndex];
-      
-      // If same dependency chain, no need to update
-      if (this.arraysEqual(existingDeadEnd.dependencyChain, this.gridState.moveHistory)) {
-        return;
-      }
-      
-      // If current move history is shorter (bubble up scenario), update the dependency chain
-      if (this.gridState.moveHistory.length < existingDeadEnd.dependencyChain.length) {
-        existingDeadEnd.dependencyChain = [...this.gridState.moveHistory];
-      }
-      // If current move history is longer, we should still update to current chain
-      // because this represents a new path to the same dead end
-      else {
-        existingDeadEnd.dependencyChain = [...this.gridState.moveHistory];
-      }
+      // Same dependency set already exists, no need to add duplicate
       return;
     }
     
-    // Create new deadEnd marker with current dependency chain
+    // Check if current moves are a subset of any existing dead-end at this position
+    const key = positionToKey(position);
+    const existingDeadEndsAtPosition = this.gridState.deadEndData.filter(
+      deadEnd => positionToKey(deadEnd.position) === key
+    );
+    
+    for (const existingDeadEnd of existingDeadEndsAtPosition) {
+      // If current moves are a subset of existing dependency chain, update it
+      if (this.isSubset(currentMoveSet, existingDeadEnd.dependencyChain)) {
+        existingDeadEnd.dependencyChain = new Set(currentMoveSet);
+        return;
+      }
+    }
+    
+    // Create new distinct dead-end marker
     const deadEnd: DeadEndMarker = {
       position,
-      dependencyChain: [...this.gridState.moveHistory] // Copy current move history
+      dependencyChain: new Set(currentMoveSet)
     };
     
     this.gridState.deadEndData.push(deadEnd);
@@ -446,14 +447,14 @@ export class GridController {
     // Update which deadEnds should be actively displayed based on current moveHistory
     // A deadEnd is active if all its dependency moves are present in current moveHistory
     
-    const activeDeadEnds = new Set<string>();
+    const activeDeadEnds: DeadEndMarker[] = [];
     
     for (const deadEnd of this.gridState.deadEndData) {
       // Check if all dependency moves are present in current moveHistory
       const isActive = this.isDeadEndActive(deadEnd);
       
       if (isActive) {
-        activeDeadEnds.add(positionToKey(deadEnd.position));
+        activeDeadEnds.push(deadEnd);
       }
     }
     
@@ -464,26 +465,25 @@ export class GridController {
     // A deadEnd is active if all its dependency moves are present in current moveHistory
     // (not necessarily as a prefix, but all moves must exist)
     
-    for (const depMove of deadEnd.dependencyChain) {
-      const found = this.gridState.moveHistory.some(
-        currentMove => currentMove.row === depMove.row && currentMove.col === depMove.col
-      );
-      
-      if (!found) {
-        return false;
-      }
+    const currentMoveKeys = new Set(this.gridState.moveHistory.map(pos => positionToKey(pos)));
+    
+    // Check if all dependency moves are present in current move history
+    return this.isSubset(deadEnd.dependencyChain, currentMoveKeys);
+  }
+  
+  private setsEqual(set1: Set<string>, set2: Set<string>): boolean {
+    if (set1.size !== set2.size) return false;
+    
+    for (const item of set1) {
+      if (!set2.has(item)) return false;
     }
     
     return true;
   }
   
-  private arraysEqual(arr1: GridPosition[], arr2: GridPosition[]): boolean {
-    if (arr1.length !== arr2.length) return false;
-    
-    for (let i = 0; i < arr1.length; i++) {
-      if (arr1[i].row !== arr2[i].row || arr1[i].col !== arr2[i].col) {
-        return false;
-      }
+  private isSubset(subset: Set<string>, superset: Set<string>): boolean {
+    for (const item of subset) {
+      if (!superset.has(item)) return false;
     }
     
     return true;
@@ -501,10 +501,10 @@ export class GridController {
       prePlacedNeighbors: new Set(this.gridState.prePlacedNeighbors),
       forbiddenSquares: new Set(this.gridState.forbiddenSquares),
       forcedMoves: new Set(this.gridState.forcedMoves),
-      deadEnds: new Set(this.gridState.deadEnds),
+      deadEnds: [...this.gridState.deadEnds],
       deadEndData: this.gridState.deadEndData.map(deadEnd => ({
         position: { ...deadEnd.position },
-        dependencyChain: [...deadEnd.dependencyChain]
+        dependencyChain: new Set(deadEnd.dependencyChain)
       })),
       moveHistory: [...this.gridState.moveHistory]
     };
@@ -519,7 +519,7 @@ export class GridController {
   
   clearGrid() {
     this.gridState.neighbors.clear();
-    this.gridState.deadEnds.clear();
+    this.gridState.deadEnds = [];
     this.gridState.deadEndData = [];
     this.gridState.moveHistory = [];
     // Don't clear pre-placed neighbors

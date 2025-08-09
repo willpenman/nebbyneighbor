@@ -5,7 +5,7 @@ export type GridPosition = {
 
 export type DeadEndMarker = {
   position: GridPosition;
-  dependencyChain: GridPosition[]; // Snapshot of moveHistory when dead end was created
+  dependencyChain: Set<string>; // Set of position keys - permutation invariant
 };
 
 export type GridState = {
@@ -14,7 +14,7 @@ export type GridState = {
   prePlacedNeighbors: Set<string>;
   forbiddenSquares: Set<string>;
   forcedMoves: Set<string>;
-  deadEnds: Set<string>; // Keys of currently active/visible dead ends (computed)
+  deadEnds: DeadEndMarker[]; // Currently active/visible dead end instances (computed)
   deadEndData: DeadEndMarker[]; // All historical dead end data (never deleted)
   moveHistory: GridPosition[];
   constraintWarning?: {
@@ -50,7 +50,7 @@ export function createGridState(size: number): GridState {
     prePlacedNeighbors: new Set(),
     forbiddenSquares: new Set(),
     forcedMoves: new Set(),
-    deadEnds: new Set(), // Computed dynamically
+    deadEnds: [], // Computed dynamically
     deadEndData: [], // Permanent historical record
     moveHistory: [],
   };

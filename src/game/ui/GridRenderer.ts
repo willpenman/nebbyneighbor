@@ -850,16 +850,9 @@ export class GridRenderer {
     // Draw X mark patterns for dead-end paths
     // Note: Dead end backgrounds are already rendered by drawForbiddenSquares() since
     // dead ends are semantically forbidden squares with additional iconography
-    for (const deadEndKey of this.gridState.deadEnds) {
-      const [row, col] = deadEndKey.split(',').map(Number);
-      
-      // Find the corresponding dead end data to get dependency chain length
-      const deadEndData = this.gridState.deadEndData.find(
-        data => positionToKey(data.position) === deadEndKey
-      );
-      const chainLength = deadEndData ? deadEndData.dependencyChain.length : 0;
-      
-      this.drawDeadEndXMarks(row, col, chainLength);
+    for (const deadEnd of this.gridState.deadEnds) {
+      const chainLength = deadEnd.dependencyChain.size;
+      this.drawDeadEndXMarks(deadEnd.position.row, deadEnd.position.col, chainLength);
     }
   }
   
