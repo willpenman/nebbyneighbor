@@ -4,6 +4,8 @@
 
 This project uses `gh` CLI for GitHub operations and repository management.
 
+**Build Output:** Production builds output to `dist/` and are served from `/nebbyneighbor/` path (e.g., `http://localhost:3000/nebbyneighbor/`).
+
 **Puzzle Configuration:**
 - Puzzle definitions are stored in `src/game/data/puzzleCatalog.ts`
 - Current catalog includes 4x4, 5x5, and 8x8 puzzles in difficulty order

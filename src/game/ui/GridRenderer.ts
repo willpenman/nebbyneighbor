@@ -461,6 +461,7 @@ export class GridRenderer {
   private drawNeighbors() {
     const mostRecentNeighbor = getMostRecentNeighbor(this.gridState);
     const mostRecentKey = mostRecentNeighbor ? positionToKey(mostRecentNeighbor) : null;
+    const isOverconstrained = !!this.gridState.constraintWarning;
     
     // Draw player-placed neighbors
     this.ctx.fillStyle = this.theme.neighborColor;
@@ -472,7 +473,8 @@ export class GridRenderer {
       const radius = Math.min(this.cellSize * this.theme.neighborRadius, 25);
       
       const isHighlighted = neighborKey === mostRecentKey;
-      this.drawNeighborShape(centerX, centerY, radius, this.theme.neighborStyle, false, isHighlighted);
+      const isMostRecentDuringOverconstrained = isOverconstrained && isHighlighted;
+      this.drawNeighborShape(centerX, centerY, radius, this.theme.neighborStyle, false, isHighlighted, isMostRecentDuringOverconstrained);
     }
     
     // Draw pre-placed neighbors with distinct styling
@@ -482,11 +484,11 @@ export class GridRenderer {
       const centerY = this.gridOffset.y + this.panOffset.y + (row * this.cellSize) + (this.cellSize / 2);
       const radius = Math.min(this.cellSize * this.theme.neighborRadius, 25);
       
-      this.drawNeighborShape(centerX, centerY, radius, this.theme.neighborStyle, true, false);
+      this.drawNeighborShape(centerX, centerY, radius, this.theme.neighborStyle, true, false, false);
     }
   }
   
-  private drawNeighborShape(centerX: number, centerY: number, radius: number, shape: 'circle' | 'rounded-square', isPrePlaced: boolean, isHighlighted: boolean = false) {
+  private drawNeighborShape(centerX: number, centerY: number, radius: number, shape: 'circle' | 'rounded-square', isPrePlaced: boolean, isHighlighted: boolean = false, isOverconstrainedRecent: boolean = false) {
     // Guard against negative or zero radius values
     if (radius <= 0) {
       console.warn('Invalid radius for neighbor shape:', radius);
@@ -496,8 +498,21 @@ export class GridRenderer {
     const color = isPrePlaced ? this.theme.prePlacedNeighborColor : this.theme.neighborColor;
     const styleType = isPrePlaced ? this.theme.prePlacedNeighborStyle : 'solid';
     
+    // Draw orange background for most recent neighbor during overconstrained state
+    if (isOverconstrainedRecent) {
+      this.ctx.save();
+      const halfCell = this.cellSize / 2;
+      const squareX = centerX - halfCell;
+      const squareY = centerY - halfCell;
+      
+      this.ctx.fillStyle = '#D2691E';
+      this.ctx.globalAlpha = 0.3;
+      this.ctx.fillRect(squareX, squareY, this.cellSize, this.cellSize);
+      this.ctx.restore();
+    }
+    
     // Draw highlighting effect if this neighbor is highlighted
-    if (isHighlighted && this.recentNeighborHighlight) {
+    if (isHighlighted && this.recentNeighborHighlight && !isOverconstrainedRecent) {
       this.drawHighlightEffect(centerX, centerY, radius, shape);
     }
     

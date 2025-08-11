@@ -12,7 +12,7 @@
 
 ## Priority Queue
 
-- [ ] **Implement skull markers for dead-end path visualization** (#23)
+- [ ] **Clearer visuals for backtrack sequence and earned forced moves (from dead-ends)** (not part of #23)
 - [ ] **Implement Canvas accessibility with DOM fallback and keyboard navigation** (#14)
 - [ ] **Add Playwright test suite with custom matchers** (#17)
 - [ ] **Display level selection interface** (#11)
