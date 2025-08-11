@@ -409,23 +409,24 @@ export class GridController {
   private placeDeadEnd(position: GridPosition) {
     // Convert current move history to set of position keys
     const currentMoveSet = new Set(this.gridState.moveHistory.map(pos => positionToKey(pos)));
-    
-    // Check for existing dead end with the same dependency set (not just same position)
-    const existingDeadEndIndex = this.gridState.deadEndData.findIndex(
-      deadEnd => this.setsEqual(deadEnd.dependencyChain, currentMoveSet)
-    );
-    
-    if (existingDeadEndIndex !== -1) {
-      // Same dependency set already exists, no need to add duplicate
-      return;
-    }
-    
-    // Check if current moves are a subset of any existing dead-end at this position
     const key = positionToKey(position);
+    
+    // Get all existing dead-ends at this specific position
     const existingDeadEndsAtPosition = this.gridState.deadEndData.filter(
       deadEnd => positionToKey(deadEnd.position) === key
     );
     
+    // Check for existing dead end with the same dependency set at this position
+    const existingDeadEndIndex = existingDeadEndsAtPosition.findIndex(
+      deadEnd => this.setsEqual(deadEnd.dependencyChain, currentMoveSet)
+    );
+    
+    if (existingDeadEndIndex !== -1) {
+      // Same dependency set already exists at this position, no need to add duplicate
+      return;
+    }
+    
+    // Check if current moves are a subset of any existing dead-end at this position
     for (const existingDeadEnd of existingDeadEndsAtPosition) {
       // If current moves are a subset of existing dependency chain, update it
       if (this.isSubset(currentMoveSet, existingDeadEnd.dependencyChain)) {
