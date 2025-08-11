@@ -1,6 +1,7 @@
 import { GridController } from './game/engine/GridController.js';
 import { DevOverlay } from './dev/DevOverlay.js';
-import { getDefaultPuzzle, getPuzzleByIndex, getPuzzleCount } from './game/data/puzzleCatalog.js';
+import { getDefaultPuzzle, getPuzzleByIndex, getPuzzleCount, getPuzzleIndex } from './game/data/puzzleCatalog.js';
+import { PersistenceManager } from './game/services/PersistenceManager.js';
 import { initFooter } from './footer.js';
 
 console.log('Nebby Neighbor game initializing...');
@@ -8,6 +9,9 @@ console.log('Nebby Neighbor game initializing...');
 // Level navigation state
 let currentLevelIndex = 0;
 let currentController: GridController | null = null;
+
+// Initialize persistence manager to check for saved level
+const persistenceManager = new PersistenceManager();
 
 // Check for dev mode via URL parameter
 const urlParams = new URLSearchParams(window.location.search);
@@ -43,8 +47,28 @@ async function initializeGame() {
   gameContainer.appendChild(canvas);
   
   try {
-    // Use dev config puzzle if available, otherwise use default from catalog (4x4)
-    const puzzle = devConfig?.testPuzzle || getDefaultPuzzle();
+    let puzzle;
+    
+    if (devConfig?.testPuzzle) {
+      // Use dev config puzzle if in dev mode
+      puzzle = devConfig.testPuzzle;
+    } else {
+      // Check for saved current level to resume player's session
+      const lastPlayedPuzzleId = persistenceManager.getLastPlayedPuzzleId();
+      if (lastPlayedPuzzleId) {
+        const savedLevelIndex = getPuzzleIndex(lastPlayedPuzzleId);
+        if (savedLevelIndex >= 0) {
+          currentLevelIndex = savedLevelIndex;
+          puzzle = getPuzzleByIndex(currentLevelIndex);
+          console.log(`Resuming saved session at level ${currentLevelIndex + 1}: ${lastPlayedPuzzleId}`);
+        }
+      }
+      
+      // Fall back to default puzzle if no saved level or not found
+      if (!puzzle) {
+        puzzle = getDefaultPuzzle();
+      }
+    }
     
     // Set dynamic accessibility label
     canvas.setAttribute('aria-label', `${puzzle.size}x${puzzle.size} grid puzzle - click cells to place neighbors`);

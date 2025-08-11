@@ -12,6 +12,7 @@
 
 ## Priority Queue
 
+- [ ] **Implement player progress persistence** 
 - [x] **Clearer visuals for backtrack sequence and earned forced moves (from dead-ends)** (not part of #23)
 - [ ] **Implement Canvas accessibility with DOM fallback and keyboard navigation** (#14)
 - [ ] **Add Playwright test suite with custom matchers** (#17)

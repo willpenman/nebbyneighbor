@@ -5,6 +5,7 @@ import { LevelControls } from '../ui/LevelControls.js';
 import { Modal } from '../ui/Modal.js';
 import { PuzzleConfig, PuzzleState } from '../types/puzzle.js';
 import { LineDetector, InspectionData, ForbiddenSquareInfo } from './LineDetector.js';
+import { PersistenceManager } from '../services/PersistenceManager.js';
 
 export class GridController {
   private gridState: GridState;
@@ -15,6 +16,7 @@ export class GridController {
   private canvas: HTMLCanvasElement;
   private puzzleState: PuzzleState | null = null;
   private lineDetector: LineDetector;
+  private persistenceManager: PersistenceManager;
   private onNextLevel?: () => void;
   private onPreviousLevel?: () => void;
   private getCurrentLevelIndex?: () => number;
@@ -57,6 +59,7 @@ export class GridController {
     });
     this.modal = new Modal();
     this.lineDetector = new LineDetector(size);
+    this.persistenceManager = new PersistenceManager();
     
     this.setupEventListeners();
     
@@ -173,6 +176,9 @@ export class GridController {
     // Check for win condition
     this.checkWinCondition();
     
+    // Save game state after every move
+    this.saveCurrentGameState();
+    
     // Automatically enter inspection mode for newly placed neighbor (unless game is complete)
     if (!this.gridState.isComplete) {
       this.enterNeighborInspectMode(position);
@@ -207,6 +213,9 @@ export class GridController {
     this.checkWinCondition();
     
     this.clearInspectMode();
+    
+    // Save game state after neighbor removal
+    this.saveCurrentGameState();
     
     // Hide overconstrained modal if it was showing (since removing a neighbor might resolve constraints)
     if (this.modal.isShowing()) {
@@ -279,7 +288,19 @@ export class GridController {
       if (!hasViolations) {
         this.gridState.isComplete = true;
         this.clearInspectMode(); // Clear inspection mode when winning
-        this.saveCompletionState();
+        
+        // Record the win with complete solution
+        const allNeighborPositions: GridPosition[] = Array.from(allNeighbors).map(key => {
+          const [row, col] = key.split(',').map(Number);
+          return { row, col };
+        });
+        
+        this.persistenceManager.recordWin(
+          this.puzzleState.config.id,
+          this.puzzleState.config.puzzleNumber,
+          allNeighborPositions
+        );
+        
         this.showSuccessModal();
         this.render();
       }
@@ -287,6 +308,51 @@ export class GridController {
       // Not complete if we don't have the right number
       this.gridState.isComplete = false;
     }
+  }
+
+  /**
+   * Save current game state for persistence
+   * Called after every significant move (place/remove neighbor)
+   */
+  private saveCurrentGameState() {
+    if (!this.puzzleState) return;
+    
+    // Don't save game state if puzzle is complete (save space and avoid conflicts)
+    if (this.gridState.isComplete) return;
+    
+    this.persistenceManager.saveGameState(
+      this.puzzleState.config.id,
+      this.puzzleState.config.puzzleNumber,
+      this.gridState.size,
+      this.gridState.neighbors,
+      this.gridState.deadEndData,
+      this.gridState.moveHistory
+    );
+  }
+
+  /**
+   * Reset puzzle for "Play Again" - clears active game state but preserves completion record
+   */
+  public resetPuzzleForPlayAgain() {
+    if (!this.puzzleState) return;
+    
+    // Clear active game state in persistence
+    this.persistenceManager.clearGameState(this.puzzleState.config.id);
+    
+    // Reset in-memory state to initial puzzle state
+    this.gridState = createGridState(this.puzzleState.config.size);
+    
+    // Restore pre-placed neighbors
+    for (const position of this.puzzleState.config.prePlacedNeighbors) {
+      const key = positionToKey(position);
+      this.gridState.prePlacedNeighbors.add(key);
+    }
+    
+    // Update display
+    this.updateForbiddenSquares();
+    this.updateStatusBar();
+    this.clearInspectMode();
+    this.render();
   }
 
   private showSuccessModal() {
@@ -555,19 +621,41 @@ export class GridController {
     // Update level controls visibility
     this.levelControls.updateVisibility();
     
+    // Always update current level tracking when viewing any level
+    // This ensures players resume at the level they were viewing, even if they didn't make moves
+    this.persistenceManager.updateCurrentLevel(puzzleConfig.id, puzzleConfig.puzzleNumber);
+    
+    // Try to load saved game state (active game in progress)
+    const savedGameState = this.persistenceManager.loadGameState(puzzleConfig.id);
+    
+    if (savedGameState) {
+      // Restore active game state - player was in middle of solving
+      this.gridState.size = savedGameState.size;
+      this.gridState.neighbors = savedGameState.neighbors;
+      this.gridState.deadEndData = savedGameState.deadEndData;
+      this.gridState.moveHistory = savedGameState.moveHistory;
+      
+      // Update active dead ends based on restored data
+      this.updateActiveDeadEnds();
+      
+    } else if (this.persistenceManager.hasCompletedPuzzle(puzzleConfig.id)) {
+      // Puzzle was completed but no active game state - show completed state
+      const winningSolution = this.persistenceManager.getWinningSolution(puzzleConfig.id);
+      if (winningSolution) {
+        // Restore winning solution
+        for (const position of winningSolution) {
+          // Only add if it's not a pre-placed neighbor
+          const key = positionToKey(position);
+          if (!this.gridState.prePlacedNeighbors.has(key)) {
+            this.gridState.neighbors.add(key);
+          }
+        }
+      }
+    }
+    
     this.updateForbiddenSquares();
     this.updateStatusBar();
-    
-    // Check if this puzzle was completed in this session and restore state
-    const completedPuzzles = this.getCompletedPuzzles();
-    const savedState = completedPuzzles[puzzleConfig.id];
-    if (savedState?.completed) {
-      // Restore player's neighbor placements
-      this.gridState.neighbors = new Set(savedState.playerNeighbors);
-      this.updateForbiddenSquares();
-      this.updateStatusBar();
-      this.checkWinCondition(); // This will trigger the success modal if complete
-    }
+    this.checkWinCondition(); // Will show success modal if puzzle is complete
     
     this.clearInspectMode();
   }
@@ -618,41 +706,10 @@ export class GridController {
     return this.modal;
   }
   
-  private saveCompletionState() {
-    if (!this.puzzleState) return;
-    
-    try {
-      const completedPuzzles = this.getCompletedPuzzles();
-      const saveData = {
-        playerNeighbors: [...this.gridState.neighbors],
-        completed: true
-      };
-      completedPuzzles[this.puzzleState.config.id] = saveData;
-      sessionStorage.setItem('nebby-completed-puzzles', JSON.stringify(completedPuzzles));
-    } catch (error) {
-      // Silently fail if sessionStorage is not available
-      console.warn('Could not save completion state:', error);
-    }
+  /**
+   * Get persistence manager for external access (debugging, level selection, etc.)
+   */
+  public getPersistenceManager(): PersistenceManager {
+    return this.persistenceManager;
   }
-  
-  private getCompletedPuzzles(): Record<string, any> {
-    try {
-      const stored = sessionStorage.getItem('nebby-completed-puzzles');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        // Handle old format (array) vs new format (object)
-        if (Array.isArray(parsed)) {
-          // Clear old format and start fresh
-          sessionStorage.removeItem('nebby-completed-puzzles');
-          return {};
-        }
-        return parsed;
-      }
-    } catch (error) {
-      // Silently fail if sessionStorage is not available
-      console.warn('Could not load completion state:', error);
-    }
-    return {};
-  }
-  
 }
